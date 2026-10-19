@@ -1,11 +1,12 @@
 """AI interprets precomputed metrics only; it never writes to source data."""
 import json
 import os
-
+import streamlit as st
 
 def generate_board_commentary(comparison, period, grain, model=None):
     from openai import OpenAI
-    api_key = os.environ.get('OPENAI_API_KEY')
+    api_key = os.environ.get('OPENAI_API_KEY') or st.secrets.get('OPENAI_API_KEY')
+
     if not api_key:
         raise RuntimeError('OPENAI_API_KEY is not configured. Use an environment variable, not a GitHub file.')
     client = OpenAI(api_key=api_key)
