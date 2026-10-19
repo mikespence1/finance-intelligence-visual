@@ -1,12 +1,14 @@
 # Packaging Finance Intelligence — Starter MVP
 
-A GitHub-ready, local-first financial management dashboard for a packaging manufacturer. It uses **deterministic** financial calculations and optional **OpenAI** management commentary.
+A local-first management dashboard for a sustainable packaging manufacturer, covering financial performance, materials and circularity, returned orders, stock, customer credit exposure, supplier payments and people costs. It uses deterministic calculations and optional OpenAI commentary.
+
+See [DATA_DICTIONARY.md](DATA_DICTIONARY.md) for the current upload schema, metric definitions and accounting conventions. The included dataset covers January–December 2026 with actual, budget and forecast scenarios. The Board pack tab now exports CSV, Excel and an editable PowerPoint presentation. Example monthly outputs are in `examples/`.
 
 ## Features
 - CSV/Excel imports for P&L accounts, production data and month-end balance-sheet figures.
 - Month, quarter, year grouping; flows sum, period-end balances take last month, ratios recalculate from underlying amounts.
 - Revenue, gross profit, EBITDA, EBIT, net profit, margins, output, scrap, DSO/DIO/DPO, cash-conversion cycle.
-- Actual vs budget dashboards, downloadable Excel board data pack, optional AI narrative.
+- Actual vs budget/forecast dashboards, downloadable Excel and PowerPoint board packs, optional AI narrative cards.
 - Synthetic sample data for all 12 months of 2026. **Not real company data.**
 
 ## Windows / VS Code quick start
@@ -29,19 +31,37 @@ A GitHub-ready, local-first financial management dashboard for a packaging manuf
 
 **API access:** A ChatGPT subscription/token allowance is not the same as API billing. Use an API key and available model from your OpenAI API account. Model selection is configurable via `OPENAI_MODEL`. Usage incurs API charges.
 
+## Dashboard presentation
+- Navy, teal and white theme configured in `.streamlit/config.toml`.
+- Month names, quarter date ranges and calendar years appear in selectors, charts and downloads. The selected reporting window shows actual monthly coverage; partial periods are flagged.
+- Headline and operational metric cards include budget comparisons. Margin differences use percentage points.
+- The performance chart uses a solid actual line and dashed budget line, with the selected period marked. Missing values remain gaps.
+- AI commentary appears in report cards and stays available during the session. Switching the reporting context hides the previous report until regenerated.
+
+## Ask Your Data
+
+The **Ask Your Data** tab provides a read-only question assistant over the currently loaded finance, operations and closing-balance files. It can query available months, quarters and years, compare actuals against budget/forecast, inspect supported source records and explain metric definitions. Questions default to the dashboard selection unless another period is specified.
+
+Setup from the project directory (the folder containing `app.py`):
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m streamlit run app.py
+```
+
+Configure `OPENAI_API_KEY` in your ignored `.streamlit/secrets.toml` or the terminal environment. The assistant shares the existing API configuration and `OPENAI_MODEL` environment setting. No separate GPT creation, agent service, vector database or file upload to OpenAI is needed. The editable instruction prompt is [prompts/data_agent.md](prompts/data_agent.md).
+
+Try “How did EBITDA compare with budget in Q1 2026?” or “How did material wastage change between Q1 and Q2?” Expand **Supporting Data & Calculations** to inspect the cited figures. `D1` refers to the supplied data dictionary; `S` references identify records or Python-calculated differences retrieved for that answer.
+
+The model selects validated tools; Python performs aggregation and comparisons. The agent has no arbitrary code, SQL, filesystem or web tool. Requests and retrieval size are bounded. Unsupported questions return a standard not-covered response; unclear questions can request clarification. The application validates source IDs but does not independently verify every sentence of AI prose, so answers require review. Customer identities, product detail and verified causes are not present in the aggregate schemas. New custom columns need explicit schema/tool support.
+
+Relevant retrieved source records, results, schema/metric definitions, dashboard context and the last few chat messages are sent to OpenAI when a question is submitted. API calls use `store=False`; this is not a complete data retention or residency policy. Chat is held in the browser session, bounded to recent messages, and cleared when datasets, data source or currency change. **Clear Conversation** removes the displayed history. Never include credentials in a question or source file.
+
+Automated tests use a simulated API client and do not send data to OpenAI. Run `python -m pytest -q` to check calculations, tool restrictions, citations, unsupported-result handling and chat UI behaviour.
+
 ## Upload schemas
-Upload all three data sets together using CSV or Excel `.xlsx`. See `data/` for exact column names and sample values.
 
-### finance.csv
-`period,scenario,account,amount` where `scenario` is `actual` or `budget`; `account` must be one of: `Revenue`, `Cost of Sales`, `Operating Expenses`, `Depreciation`, `Interest`, `Tax`. **Revenue and expenses both use positive amounts**. Negative entries are blocked in the starter. Multiple entries by account/month are aggregated. `period` is parsed as date; calendar months are used.
-
-### operations.csv
-`period,scenario,production_tonnes,scrap_tonnes,energy_cost`. Monthly flows; avoid mixed units. Distinguish good tonnes from scrap tonnes; scrap rate = scrap/(good + scrap).
-
-### balances.csv
-`period,scenario,Cash,Accounts Receivable,Inventory,Accounts Payable,Debt`. Exactly one **month-end closing** row per period/scenario. Balance fields are signed where appropriate but check accounting sign conventions. Quarter/year values use latest month available (even if period is incomplete).
-
-For accurate P&L, actual and budget must each contain the expected account categories for every reporting period. Missing financial account combinations currently behave as zero and therefore must be reviewed by Finance. This starter assumes the same currency, corporate entity and fiscal calendar for every record, no eliminations, and no VAT handling. It is not an accounting system.
+See [DATA_DICTIONARY.md](DATA_DICTIONARY.md) and the CSV files in data/ for all required and optional columns, units, actual/budget/forecast scenarios, and aggregation rules. Older datasets remain supported; missing extended metrics display as unavailable.
 
 ## Important data-quality notes
 - The MVP is a prototype with browser-session uploads, not a transactional datastore; uploaded files are **not persisted** across sessions.
