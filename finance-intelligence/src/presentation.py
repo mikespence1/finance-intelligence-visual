@@ -50,7 +50,7 @@ def format_metric(value, name, currency):
 
 def narrative_sections(text):
     """Split Markdown headings, with a readable fallback for unstructured responses."""
-    titles = ['Executive summary', 'Performance vs budget', 'Performance vs forecast', 'Risks and questions', 'Proposed actions']
+    titles = ['Executive summary', 'Performance vs budget and forecast', 'Performance vs budget', 'Performance vs forecast', 'Risks and questions', 'Proposed actions']
     heading = re.compile(
         r'^\s*(?:#{1,6}\s*|\*\*)?(?:\d+[.)]\s*)?('
         + '|'.join(titles) + r')\s*:?(?:\*\*)?\s*:?[ \t]*(.*)$', re.I)
@@ -85,10 +85,12 @@ def performance_chart(kpis, metric, grain, selected, currency, baseline='budget'
     ]
     stride = max(1, (len(labels) + 11) // 12)
     tick_positions = sorted(set(positions[::stride] + positions[-1:]))
-    for scenario, title, color, dash in [
-        (baseline, baseline.title(), '#8A9CB2', 'dash'),
-        ('actual', 'Actual', TEAL, 'solid'),
-    ]:
+    if baseline not in ['budget', 'forecast', 'both']:
+        raise ValueError('Choose budget, forecast or both')
+    series = [('budget', 'Budget', '#8A9CB2', 'dash'), ('forecast', 'Forecast', '#C98231', 'dot')]
+    series = [item for item in series if baseline == 'both' or item[0] == baseline]
+    series.append(('actual', 'Actual', TEAL, 'solid'))
+    for scenario, title, color, dash in series:
         data = kpis[kpis.scenario == scenario].set_index('label').reindex(labels)
         fig.add_trace(go.Scatter(
             x=positions, y=data[metric], name=title, mode='lines+markers',

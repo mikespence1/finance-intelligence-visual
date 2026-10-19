@@ -1,16 +1,17 @@
 """AI interprets precomputed metrics only; it never writes to source data."""
 import json
 import os
-import streamlit as st
+from pathlib import Path
+import tomllib
 
 def openai_client():
     from openai import OpenAI
     api_key = os.environ.get('OPENAI_API_KEY')
     if not api_key:
-        try:
-            api_key = st.secrets.get('OPENAI_API_KEY')
-        except FileNotFoundError:
-            api_key = None
+        secrets_file = Path(__file__).resolve().parents[1] / '.streamlit' / 'secrets.toml'
+        if secrets_file.is_file():
+            with secrets_file.open('rb') as handle:
+                api_key = tomllib.load(handle).get('OPENAI_API_KEY')
     if not api_key:
         raise RuntimeError('OPENAI_API_KEY is not configured. Set an environment variable or .streamlit/secrets.toml.')
     return OpenAI(api_key=api_key, timeout=45, max_retries=1)
@@ -18,6 +19,7 @@ def openai_client():
 
 def generate_board_commentary(comparison, period, grain, model=None, currency='AED', baseline='budget'):
     client = openai_client()
+    baseline = 'budget and forecast' if baseline == 'both' else baseline
     context = [{key: (None if __import__('pandas').isna(val) else val) for key, val in record.items()} for record in comparison.to_dict(orient='records')]
     response = client.responses.create(
         model=model or os.environ.get('OPENAI_MODEL', 'gpt-4.1-mini'),

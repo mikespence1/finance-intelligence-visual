@@ -1,253 +1,253 @@
 period,scenario,account,amount
-2026-01-01,actual,Revenue,5075264.9
-2026-01-01,actual,Cost of Sales,3248169.54
-2026-01-01,actual,Operating Expenses,868900.0
-2026-01-01,actual,Staff Costs,686400.0
+2026-01-01,actual,Revenue,3524776.64
+2026-01-01,actual,Cost of Sales,2255857.05
+2026-01-01,actual,Operating Expenses,867243.42
+2026-01-01,actual,Staff Costs,655200.0
 2026-01-01,actual,Depreciation,125000.0
 2026-01-01,actual,Interest,28000.0
-2026-01-01,actual,Tax,72467.58
-2026-01-01,budget,Revenue,4910000.0
-2026-01-01,budget,Cost of Sales,3044200.0
-2026-01-01,budget,Operating Expenses,853300.0
-2026-01-01,budget,Staff Costs,670800.0
+2026-01-01,actual,Tax,22380.86
+2026-01-01,budget,Revenue,3410000.0
+2026-01-01,budget,Cost of Sales,2114200.0
+2026-01-01,budget,Operating Expenses,850600.0
+2026-01-01,budget,Staff Costs,639600.0
 2026-01-01,budget,Depreciation,125000.0
 2026-01-01,budget,Interest,28000.0
-2026-01-01,budget,Tax,77355.0
-2026-01-01,forecast,Revenue,5032750.0
-2026-01-01,forecast,Cost of Sales,3195796.25
-2026-01-01,forecast,Operating Expenses,853300.0
-2026-01-01,forecast,Staff Costs,670800.0
+2026-01-01,budget,Tax,26298.0
+2026-01-01,forecast,Revenue,3495250.0
+2026-01-01,forecast,Cost of Sales,2219483.75
+2026-01-01,forecast,Operating Expenses,851375.0
+2026-01-01,forecast,Staff Costs,639600.0
 2026-01-01,forecast,Depreciation,125000.0
 2026-01-01,forecast,Interest,28000.0
-2026-01-01,forecast,Tax,74758.84
-2026-02-01,actual,Revenue,5202586.92
-2026-02-01,actual,Cost of Sales,3329655.63
-2026-02-01,actual,Operating Expenses,871400.0
-2026-02-01,actual,Staff Costs,686400.0
+2026-01-01,forecast,Tax,24425.21
+2026-02-01,actual,Revenue,3990031.8
+2026-02-01,actual,Cost of Sales,2553620.35
+2026-02-01,actual,Operating Expenses,871473.02
+2026-02-01,actual,Staff Costs,655200.0
 2026-02-01,actual,Depreciation,125000.0
 2026-02-01,actual,Interest,28000.0
-2026-02-01,actual,Tax,76367.82
-2026-02-01,budget,Revenue,5020000.0
-2026-02-01,budget,Cost of Sales,3112400.0
-2026-02-01,budget,Operating Expenses,855800.0
-2026-02-01,budget,Staff Costs,670800.0
+2026-02-01,actual,Tax,37074.46
+2026-02-01,budget,Revenue,3850000.0
+2026-02-01,budget,Cost of Sales,2387000.0
+2026-02-01,budget,Operating Expenses,854600.0
+2026-02-01,budget,Staff Costs,639600.0
 2026-02-01,budget,Depreciation,125000.0
 2026-02-01,budget,Interest,28000.0
-2026-02-01,budget,Tax,80892.0
-2026-02-01,forecast,Revenue,5145500.0
-2026-02-01,forecast,Cost of Sales,3267392.5
-2026-02-01,forecast,Operating Expenses,855800.0
-2026-02-01,forecast,Staff Costs,670800.0
+2026-02-01,budget,Tax,40986.0
+2026-02-01,forecast,Revenue,3946250.0
+2026-02-01,forecast,Cost of Sales,2505868.75
+2026-02-01,forecast,Operating Expenses,855475.0
+2026-02-01,forecast,Staff Costs,639600.0
 2026-02-01,forecast,Depreciation,125000.0
 2026-02-01,forecast,Interest,28000.0
-2026-02-01,forecast,Tax,78237.68
-2026-03-01,actual,Revenue,5158957.83
-2026-03-01,actual,Cost of Sales,3301733.01
-2026-03-01,actual,Operating Expenses,873900.0
+2026-02-01,forecast,Tax,38871.56
+2026-03-01,actual,Revenue,5531046.4
+2026-03-01,actual,Cost of Sales,3539869.7
+2026-03-01,actual,Operating Expenses,916682.24
 2026-03-01,actual,Staff Costs,686400.0
 2026-03-01,actual,Depreciation,125000.0
 2026-03-01,actual,Interest,28000.0
-2026-03-01,actual,Tax,74729.23
-2026-03-01,budget,Revenue,5130000.0
-2026-03-01,budget,Cost of Sales,3180600.0
-2026-03-01,budget,Operating Expenses,858300.0
+2026-03-01,actual,Tax,82934.5
+2026-03-01,budget,Revenue,5500000.0
+2026-03-01,budget,Cost of Sales,3410000.0
+2026-03-01,budget,Operating Expenses,900800.0
 2026-03-01,budget,Staff Costs,670800.0
 2026-03-01,budget,Depreciation,125000.0
 2026-03-01,budget,Interest,28000.0
-2026-03-01,budget,Tax,84429.0
-2026-03-01,forecast,Revenue,5258250.0
-2026-03-01,forecast,Cost of Sales,3338988.75
-2026-03-01,forecast,Operating Expenses,858300.0
+2026-03-01,budget,Tax,93258.0
+2026-03-01,forecast,Revenue,5637500.0
+2026-03-01,forecast,Cost of Sales,3579812.5
+2026-03-01,forecast,Operating Expenses,902050.0
 2026-03-01,forecast,Staff Costs,670800.0
 2026-03-01,forecast,Depreciation,125000.0
 2026-03-01,forecast,Interest,28000.0
-2026-03-01,forecast,Tax,81716.51
-2026-04-01,actual,Revenue,5081374.2
-2026-04-01,actual,Cost of Sales,3252079.49
-2026-04-01,actual,Operating Expenses,884200.0
-2026-04-01,actual,Staff Costs,694200.0
+2026-03-01,forecast,Tax,90237.37
+2026-04-01,actual,Revenue,5546843.59
+2026-04-01,actual,Cost of Sales,3549979.9
+2026-04-01,actual,Operating Expenses,916825.85
+2026-04-01,actual,Staff Costs,686400.0
 2026-04-01,actual,Depreciation,125000.0
 2026-04-01,actual,Interest,28000.0
-2026-04-01,actual,Tax,71288.52
-2026-04-01,budget,Revenue,5240000.0
-2026-04-01,budget,Cost of Sales,3248800.0
-2026-04-01,budget,Operating Expenses,868600.0
-2026-04-01,budget,Staff Costs,678600.0
+2026-04-01,actual,Tax,83433.41
+2026-04-01,budget,Revenue,5720000.0
+2026-04-01,budget,Cost of Sales,3546400.0
+2026-04-01,budget,Operating Expenses,902800.0
+2026-04-01,budget,Staff Costs,670800.0
 2026-04-01,budget,Depreciation,125000.0
 2026-04-01,budget,Interest,28000.0
-2026-04-01,budget,Tax,87264.0
-2026-04-01,forecast,Revenue,5371000.0
-2026-04-01,forecast,Cost of Sales,3410585.0
-2026-04-01,forecast,Operating Expenses,868600.0
-2026-04-01,forecast,Staff Costs,678600.0
+2026-04-01,budget,Tax,100602.0
+2026-04-01,forecast,Revenue,5863000.0
+2026-04-01,forecast,Cost of Sales,3723005.0
+2026-04-01,forecast,Operating Expenses,904100.0
+2026-04-01,forecast,Staff Costs,670800.0
 2026-04-01,forecast,Depreciation,125000.0
 2026-04-01,forecast,Interest,28000.0
-2026-04-01,forecast,Tax,84493.35
-2026-05-01,actual,Revenue,5144790.21
-2026-05-01,actual,Cost of Sales,3292665.73
-2026-05-01,actual,Operating Expenses,886700.0
-2026-05-01,actual,Staff Costs,694200.0
+2026-04-01,forecast,Tax,97460.55
+2026-05-01,actual,Revenue,5394817.39
+2026-05-01,actual,Cost of Sales,3452683.13
+2026-05-01,actual,Operating Expenses,915443.79
+2026-05-01,actual,Staff Costs,686400.0
 2026-05-01,actual,Depreciation,125000.0
 2026-05-01,actual,Interest,28000.0
-2026-05-01,actual,Tax,73118.2
-2026-05-01,budget,Revenue,5350000.0
-2026-05-01,budget,Cost of Sales,3317000.0
-2026-05-01,budget,Operating Expenses,871100.0
-2026-05-01,budget,Staff Costs,678600.0
+2026-05-01,actual,Tax,78632.14
+2026-05-01,budget,Revenue,5610000.0
+2026-05-01,budget,Cost of Sales,3478200.0
+2026-05-01,budget,Operating Expenses,901800.0
+2026-05-01,budget,Staff Costs,670800.0
 2026-05-01,budget,Depreciation,125000.0
 2026-05-01,budget,Interest,28000.0
-2026-05-01,budget,Tax,90801.0
-2026-05-01,forecast,Revenue,5483750.0
-2026-05-01,forecast,Cost of Sales,3482181.25
-2026-05-01,forecast,Operating Expenses,871100.0
-2026-05-01,forecast,Staff Costs,678600.0
+2026-05-01,budget,Tax,96930.0
+2026-05-01,forecast,Revenue,5750250.0
+2026-05-01,forecast,Cost of Sales,3651408.75
+2026-05-01,forecast,Operating Expenses,903075.0
+2026-05-01,forecast,Staff Costs,670800.0
 2026-05-01,forecast,Depreciation,125000.0
 2026-05-01,forecast,Interest,28000.0
-2026-05-01,forecast,Tax,87972.19
-2026-06-01,actual,Revenue,5398975.66
-2026-06-01,actual,Cost of Sales,3455344.42
-2026-06-01,actual,Operating Expenses,889200.0
-2026-06-01,actual,Staff Costs,694200.0
+2026-05-01,forecast,Tax,93848.96
+2026-06-01,actual,Revenue,7342013.6
+2026-06-01,actual,Cost of Sales,4698888.7
+2026-06-01,actual,Operating Expenses,1072297.58
+2026-06-01,actual,Staff Costs,825552.0
 2026-06-01,actual,Depreciation,125000.0
 2026-06-01,actual,Interest,28000.0
-2026-06-01,actual,Tax,81128.81
-2026-06-01,budget,Revenue,5460000.0
-2026-06-01,budget,Cost of Sales,3385200.0
-2026-06-01,budget,Operating Expenses,873600.0
-2026-06-01,budget,Staff Costs,678600.0
+2026-06-01,actual,Tax,127604.46
+2026-06-01,budget,Revenue,7425000.0
+2026-06-01,budget,Cost of Sales,4603500.0
+2026-06-01,budget,Operating Expenses,1056204.0
+2026-06-01,budget,Staff Costs,808704.0
 2026-06-01,budget,Depreciation,125000.0
 2026-06-01,budget,Interest,28000.0
-2026-06-01,budget,Tax,94338.0
-2026-06-01,forecast,Revenue,5596500.0
-2026-06-01,forecast,Cost of Sales,3553777.5
-2026-06-01,forecast,Operating Expenses,873600.0
-2026-06-01,forecast,Staff Costs,678600.0
+2026-06-01,budget,Tax,145106.64
+2026-06-01,forecast,Revenue,7610625.0
+2026-06-01,forecast,Cost of Sales,4832746.88
+2026-06-01,forecast,Operating Expenses,1057891.5
+2026-06-01,forecast,Staff Costs,808704.0
 2026-06-01,forecast,Depreciation,125000.0
 2026-06-01,forecast,Interest,28000.0
-2026-06-01,forecast,Tax,91451.02
-2026-07-01,actual,Revenue,5716376.61
-2026-07-01,actual,Cost of Sales,3658481.03
-2026-07-01,actual,Operating Expenses,891700.0
-2026-07-01,actual,Staff Costs,694200.0
+2026-06-01,forecast,Tax,141028.8
+2026-07-01,actual,Revenue,8015242.61
+2026-07-01,actual,Cost of Sales,5129755.27
+2026-07-01,actual,Operating Expenses,1078417.84
+2026-07-01,actual,Staff Costs,825552.0
 2026-07-01,actual,Depreciation,125000.0
 2026-07-01,actual,Interest,28000.0
-2026-07-01,actual,Tax,91187.6
-2026-07-01,budget,Revenue,5570000.0
-2026-07-01,budget,Cost of Sales,3453400.0
-2026-07-01,budget,Operating Expenses,876100.0
-2026-07-01,budget,Staff Costs,678600.0
+2026-07-01,actual,Tax,148866.25
+2026-07-01,budget,Revenue,7810000.0
+2026-07-01,budget,Cost of Sales,4842200.0
+2026-07-01,budget,Operating Expenses,1059704.0
+2026-07-01,budget,Staff Costs,808704.0
 2026-07-01,budget,Depreciation,125000.0
 2026-07-01,budget,Interest,28000.0
-2026-07-01,budget,Tax,97875.0
-2026-07-01,forecast,Revenue,5709250.0
-2026-07-01,forecast,Cost of Sales,3625373.75
-2026-07-01,forecast,Operating Expenses,876100.0
-2026-07-01,forecast,Staff Costs,678600.0
+2026-07-01,budget,Tax,157958.64
+2026-07-01,forecast,Revenue,8005250.0
+2026-07-01,forecast,Cost of Sales,5083333.75
+2026-07-01,forecast,Operating Expenses,1061479.0
+2026-07-01,forecast,Staff Costs,808704.0
 2026-07-01,forecast,Depreciation,125000.0
 2026-07-01,forecast,Interest,28000.0
-2026-07-01,forecast,Tax,94929.86
-2026-08-01,actual,Revenue,5904782.19
-2026-08-01,actual,Cost of Sales,3779060.6
-2026-08-01,actual,Operating Expenses,902000.0
-2026-08-01,actual,Staff Costs,702000.0
+2026-07-01,forecast,Tax,153669.35
+2026-08-01,actual,Revenue,8347781.87
+2026-08-01,actual,Cost of Sales,5342580.4
+2026-08-01,actual,Operating Expenses,1081440.93
+2026-08-01,actual,Staff Costs,825552.0
 2026-08-01,actual,Depreciation,125000.0
 2026-08-01,actual,Interest,28000.0
-2026-08-01,actual,Tax,96364.94
-2026-08-01,budget,Revenue,5680000.0
-2026-08-01,budget,Cost of Sales,3521600.0
-2026-08-01,budget,Operating Expenses,886400.0
-2026-08-01,budget,Staff Costs,686400.0
+2026-08-01,actual,Tax,159368.45
+2026-08-01,budget,Revenue,8030000.0
+2026-08-01,budget,Cost of Sales,4978600.0
+2026-08-01,budget,Operating Expenses,1061704.0
+2026-08-01,budget,Staff Costs,808704.0
 2026-08-01,budget,Depreciation,125000.0
 2026-08-01,budget,Interest,28000.0
-2026-08-01,budget,Tax,100710.0
-2026-08-01,forecast,Revenue,5822000.0
-2026-08-01,forecast,Cost of Sales,3696970.0
-2026-08-01,forecast,Operating Expenses,886400.0
-2026-08-01,forecast,Staff Costs,686400.0
+2026-08-01,budget,Tax,165302.64
+2026-08-01,forecast,Revenue,8230750.0
+2026-08-01,forecast,Cost of Sales,5226526.25
+2026-08-01,forecast,Operating Expenses,1063529.0
+2026-08-01,forecast,Staff Costs,808704.0
 2026-08-01,forecast,Depreciation,125000.0
 2026-08-01,forecast,Interest,28000.0
-2026-08-01,forecast,Tax,97706.7
-2026-09-01,actual,Revenue,5885446.64
-2026-09-01,actual,Cost of Sales,3766685.85
-2026-09-01,actual,Operating Expenses,904500.0
-2026-09-01,actual,Staff Costs,702000.0
+2026-08-01,forecast,Tax,160892.53
+2026-09-01,actual,Revenue,7826932.49
+2026-09-01,actual,Cost of Sales,5009236.8
+2026-09-01,actual,Operating Expenses,1076705.93
+2026-09-01,actual,Staff Costs,825552.0
 2026-09-01,actual,Depreciation,125000.0
 2026-09-01,actual,Interest,28000.0
-2026-09-01,actual,Tax,95513.47
-2026-09-01,budget,Revenue,5790000.0
-2026-09-01,budget,Cost of Sales,3589800.0
-2026-09-01,budget,Operating Expenses,888900.0
-2026-09-01,budget,Staff Costs,686400.0
+2026-09-01,actual,Tax,142919.08
+2026-09-01,budget,Revenue,7700000.0
+2026-09-01,budget,Cost of Sales,4774000.0
+2026-09-01,budget,Operating Expenses,1058704.0
+2026-09-01,budget,Staff Costs,808704.0
 2026-09-01,budget,Depreciation,125000.0
 2026-09-01,budget,Interest,28000.0
-2026-09-01,budget,Tax,104247.0
-2026-09-01,forecast,Revenue,5934750.0
-2026-09-01,forecast,Cost of Sales,3768566.25
-2026-09-01,forecast,Operating Expenses,888900.0
-2026-09-01,forecast,Staff Costs,686400.0
+2026-09-01,budget,Tax,154286.64
+2026-09-01,forecast,Revenue,7892500.0
+2026-09-01,forecast,Cost of Sales,5011737.5
+2026-09-01,forecast,Operating Expenses,1060454.0
+2026-09-01,forecast,Staff Costs,808704.0
 2026-09-01,forecast,Depreciation,125000.0
 2026-09-01,forecast,Interest,28000.0
-2026-09-01,forecast,Tax,101185.54
-2026-10-01,actual,Revenue,5771611.02
-2026-10-01,actual,Cost of Sales,3693831.05
-2026-10-01,actual,Operating Expenses,907000.0
-2026-10-01,actual,Staff Costs,702000.0
+2026-09-01,forecast,Tax,150057.76
+2026-10-01,actual,Revenue,7209622.58
+2026-10-01,actual,Cost of Sales,4614158.45
+2026-10-01,actual,Operating Expenses,1071094.02
+2026-10-01,actual,Staff Costs,825552.0
 2026-10-01,actual,Depreciation,125000.0
 2026-10-01,actual,Interest,28000.0
-2026-10-01,actual,Tax,91600.2
-2026-10-01,budget,Revenue,5900000.0
-2026-10-01,budget,Cost of Sales,3658000.0
-2026-10-01,budget,Operating Expenses,891400.0
-2026-10-01,budget,Staff Costs,686400.0
+2026-10-01,actual,Tax,123423.31
+2026-10-01,budget,Revenue,7370000.0
+2026-10-01,budget,Cost of Sales,4569400.0
+2026-10-01,budget,Operating Expenses,1055704.0
+2026-10-01,budget,Staff Costs,808704.0
 2026-10-01,budget,Depreciation,125000.0
 2026-10-01,budget,Interest,28000.0
-2026-10-01,budget,Tax,107784.0
-2026-10-01,forecast,Revenue,6047500.0
-2026-10-01,forecast,Cost of Sales,3840162.5
-2026-10-01,forecast,Operating Expenses,891400.0
-2026-10-01,forecast,Staff Costs,686400.0
+2026-10-01,budget,Tax,143270.64
+2026-10-01,forecast,Revenue,7554250.0
+2026-10-01,forecast,Cost of Sales,4796948.75
+2026-10-01,forecast,Operating Expenses,1057379.0
+2026-10-01,forecast,Staff Costs,808704.0
 2026-10-01,forecast,Depreciation,125000.0
 2026-10-01,forecast,Interest,28000.0
-2026-10-01,forecast,Tax,104664.37
-2026-11-01,actual,Revenue,5769602.35
-2026-11-01,actual,Cost of Sales,3692545.51
-2026-11-01,actual,Operating Expenses,909500.0
-2026-11-01,actual,Staff Costs,702000.0
+2026-10-01,forecast,Tax,139223.0
+2026-11-01,actual,Revenue,5438402.22
+2026-11-01,actual,Cost of Sales,3480577.42
+2026-11-01,actual,Operating Expenses,915840.02
+2026-11-01,actual,Staff Costs,686400.0
 2026-11-01,actual,Depreciation,125000.0
 2026-11-01,actual,Interest,28000.0
-2026-11-01,actual,Tax,91310.12
-2026-11-01,budget,Revenue,6010000.0
-2026-11-01,budget,Cost of Sales,3726200.0
-2026-11-01,budget,Operating Expenses,893900.0
-2026-11-01,budget,Staff Costs,686400.0
+2026-11-01,actual,Tax,80008.63
+2026-11-01,budget,Revenue,5665000.0
+2026-11-01,budget,Cost of Sales,3512300.0
+2026-11-01,budget,Operating Expenses,902300.0
+2026-11-01,budget,Staff Costs,670800.0
 2026-11-01,budget,Depreciation,125000.0
 2026-11-01,budget,Interest,28000.0
-2026-11-01,budget,Tax,111321.0
-2026-11-01,forecast,Revenue,6160250.0
-2026-11-01,forecast,Cost of Sales,3911758.75
-2026-11-01,forecast,Operating Expenses,893900.0
-2026-11-01,forecast,Staff Costs,686400.0
+2026-11-01,budget,Tax,98766.0
+2026-11-01,forecast,Revenue,5806625.0
+2026-11-01,forecast,Cost of Sales,3687206.87
+2026-11-01,forecast,Operating Expenses,903587.5
+2026-11-01,forecast,Staff Costs,670800.0
 2026-11-01,forecast,Depreciation,125000.0
 2026-11-01,forecast,Interest,28000.0
-2026-11-01,forecast,Tax,108143.21
-2026-12-01,actual,Revenue,5988646.95
-2026-12-01,actual,Cost of Sales,3832734.05
-2026-12-01,actual,Operating Expenses,919800.0
-2026-12-01,actual,Staff Costs,709800.0
+2026-11-01,forecast,Tax,95654.76
+2026-12-01,actual,Revenue,8611126.33
+2026-12-01,actual,Cost of Sales,5511120.85
+2026-12-01,actual,Operating Expenses,1083834.97
+2026-12-01,actual,Staff Costs,825552.0
 2026-12-01,actual,Depreciation,125000.0
 2026-12-01,actual,Interest,28000.0
-2026-12-01,actual,Tax,97480.16
-2026-12-01,budget,Revenue,6120000.0
-2026-12-01,budget,Cost of Sales,3794400.0
-2026-12-01,budget,Operating Expenses,904200.0
-2026-12-01,budget,Staff Costs,694200.0
+2026-12-01,actual,Tax,167685.35
+2026-12-01,budget,Revenue,8800000.0
+2026-12-01,budget,Cost of Sales,5456000.0
+2026-12-01,budget,Operating Expenses,1068704.0
+2026-12-01,budget,Staff Costs,808704.0
 2026-12-01,budget,Depreciation,125000.0
 2026-12-01,budget,Interest,28000.0
-2026-12-01,budget,Tax,114156.0
-2026-12-01,forecast,Revenue,6273000.0
-2026-12-01,forecast,Cost of Sales,3983355.0
-2026-12-01,forecast,Operating Expenses,904200.0
-2026-12-01,forecast,Staff Costs,694200.0
+2026-12-01,budget,Tax,191006.64
+2026-12-01,forecast,Revenue,9020000.0
+2026-12-01,forecast,Cost of Sales,5727700.0
+2026-12-01,forecast,Operating Expenses,1070704.0
+2026-12-01,forecast,Staff Costs,808704.0
 2026-12-01,forecast,Depreciation,125000.0
 2026-12-01,forecast,Interest,28000.0
-2026-12-01,forecast,Tax,110920.05
+2026-12-01,forecast,Tax,186173.64

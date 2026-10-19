@@ -1,4 +1,4 @@
-"""Streamlit demo. Uploaded data stays in session memory."""
+"""Legacy Streamlit UI. The primary React/FastAPI application starts with npm run dev."""
 import hashlib
 import io
 from itertools import count
@@ -28,6 +28,15 @@ h1, h2, h3 {color: #142D4E; letter-spacing: -.025em;}
 [data-testid="stMetricValue"] {color: #142D4E; font-weight: 700;}
 [data-testid="stMetricLabel"] {color: #52677F;}
 [data-testid="stSidebar"] {border-right: 1px solid #DFE7F0;}
+[data-testid="stSidebar"] .st-key-reporting_page [role="radiogroup"] {gap: .5rem;}
+[data-testid="stSidebar"] .st-key-reporting_page [data-testid="stRadio"] label,
+[data-testid="stSidebar"] .st-key-reporting_page [role="radiogroup"] label {
+    background: #EAF0F6; border-radius: 10px; padding: .65rem .8rem;
+    border: 1px solid #D7E2EC; font-weight: 600;
+}
+[data-testid="stSidebar"] .st-key-reporting_page label:has(input:checked) {
+    background: #D7EEEC; border-color: #008A87; box-shadow: 0 2px 6px rgba(20,45,78,.1);
+}
 .eyebrow {color: #008A87; font-size: .8rem; font-weight: 700;
     letter-spacing: .12em; line-height: 1.6; padding: .35rem 0; margin-bottom: .4rem;}
 [data-baseweb="tab-list"] {gap: 1.2rem;}
@@ -58,6 +67,10 @@ def read_upload(upload):
 
 with st.sidebar:
     st.markdown('### Reporting Workspace')
+    st.markdown('### Reporting & Analysis')
+    page = st.radio('Reporting & Analysis', ['Financial Performance', 'Sustainability & Operations',
+                    'Board Pack', 'AI Report', 'Ask Your Data'], key='reporting_page', label_visibility='collapsed')
+    st.divider()
     source = st.radio('Data source', ['Sample dataset', 'Upload finance files'])
     if source == 'Sample dataset':
         st.caption('Synthetic sample data · January–December 2026')
@@ -69,8 +82,10 @@ with st.sidebar:
             st.info('Provide all three files to display uploaded financial results.')
             st.stop()
     grain = st.selectbox('Group results by', ['Month', 'Quarter', 'Year'])
-    baseline = st.selectbox('Compare actuals against', ['budget', 'forecast'], format_func=str.title)
-    baseline_title = baseline.title()
+    baseline = st.selectbox('Compare Actuals Against', ['budget', 'forecast', 'both'], index=2,
+                            format_func=lambda value: 'Budget & Forecast' if value == 'both' else value.title())
+    baseline_title = 'Budget & Forecast' if baseline == 'both' else baseline.title()
+    baselines = ['budget', 'forecast'] if baseline == 'both' else [baseline]
     currency = st.text_input('Reporting currency', 'AED', max_chars=8)
     st.divider()
     st.caption('Prototype · Calendar fiscal year. Review uploaded data before using results for decisions.')
@@ -102,9 +117,10 @@ comparison = compare_scenarios(kpis, selected, baseline)
 display_period = period_label(selected, grain)
 window = pd.Period(selected, freq={'Month': 'M', 'Quarter': 'Q', 'Year': 'Y'}[grain])
 heading(display_period)
-st.caption(f'Actual results against {baseline} · {window.start_time:%d %b %Y} – {window.end_time:%d %b %Y} · Currency: {currency}')
-if not ((kpis.label == selected) & (kpis.scenario == baseline)).any():
-    st.warning(f'No {baseline} data for this period. Comparisons are unavailable, not zero.')
+st.caption(f'Actual results against {baseline_title} · {window.start_time:%d %b %Y} – {window.end_time:%d %b %Y} · Currency: {currency}')
+for comparator in baselines:
+    if not ((kpis.label == selected) & (kpis.scenario == comparator)).any():
+        st.warning(f'No {comparator} data for this period. Comparisons are unavailable, not zero.')
 
 coverage = []
 for dataset, name in [(finance, 'Finance'), (ops, 'Operations'), (balances, 'Closing balances')]:
@@ -122,7 +138,7 @@ if any(count < expected for _, count in coverage):
 def metric_card(column, name, title=None, lower_better=False):
     row = comparison.loc[comparison.Metric == name].iloc[0]
     delta = None
-    if pd.notna(row.Actual) and pd.notna(row[baseline_title]):
+    if baseline != 'both' and pd.notna(row.Actual) and pd.notna(row[baseline_title]):
         if '%' in name:
             delta = f'{row.Variance:+,.1f} pp vs {baseline}'
         elif pd.notna(row['Variance %']):
@@ -131,40 +147,51 @@ def metric_card(column, name, title=None, lower_better=False):
         with card():
             st.metric(title_case(title or METRIC_LABELS.get(name, name)), format_metric(row.Actual, name, currency), delta=delta,
                       delta_color='inverse' if lower_better or name in LOWER_BETTER else 'normal')
-            st.caption(baseline_title + ': ' + format_metric(row[baseline_title], name, currency))
+            for comparator in baselines:
+                target = comparator.title()
+                variance = row['Variance vs ' + target] if baseline == 'both' else row.Variance
+                relative = row['Variance % vs ' + target] if baseline == 'both' else row['Variance %']
+                change = ('Unavailable' if pd.isna(variance) else f'{variance:+,.1f} pp' if '%' in name
+                          else f'{relative:+,.1f}%' if pd.notna(relative) else format_metric(variance, name, currency))
+                st.caption(f'{target}: {format_metric(row[target], name, currency)} · Δ {change}')
 
 
 for col, name in zip(st.columns(4), ['Revenue', 'Gross Profit', 'EBITDA', 'EBITDA Margin %']):
     metric_card(col, name)
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(['Financial Performance', 'Sustainability & Operations', 'Board Pack', 'AI Report', 'Ask Your Data'])
-with tab1:
+heading(page)
+if page == 'Financial Performance':
     with card():
         heading('Performance Against Plan')
-        st.caption(f'Solid teal = actual · Dashed grey = {baseline} · Vertical marker = selected reporting period')
+        st.caption('Solid Teal = Actual · Dashed Grey = Budget · Dotted Amber = Forecast · Vertical Marker = Selected Period')
         metric = st.selectbox('Financial metric', METRIC_GROUPS['Financial performance'])
         st.plotly_chart(performance_chart(kpis, metric, grain, selected, currency, baseline), use_container_width=True)
         row = comparison.loc[comparison.Metric == metric].iloc[0]
-        cols = st.columns(3)
+        cols = st.columns(1 + len(baselines))
         cols[0].metric('Actual · ' + display_period, format_metric(row.Actual, metric, currency))
-        cols[1].metric(baseline_title + ' · ' + display_period, format_metric(row[baseline_title], metric, currency))
-        difference = 'Unavailable' if pd.isna(row.Variance) else (f'{row.Variance:+,.1f} pp' if '%' in metric else f'{currency} {row.Variance:+,.0f}')
-        cols[2].metric('Variance To ' + baseline_title, difference)
+        delta_cols = st.columns(len(baselines))
+        for index, comparator in enumerate(baselines):
+            target = comparator.title()
+            cols[1+index].metric(target, format_metric(row[target], metric, currency))
+            variance = row['Variance vs ' + target] if baseline == 'both' else row.Variance
+            difference = 'Unavailable' if pd.isna(variance) else (f'{variance:+,.1f} pp' if '%' in metric else f'{currency} {variance:+,.0f}')
+            delta_cols[index].metric('Variance To ' + target, difference)
     heading('People & Operating Expenses')
     for col, name in zip(st.columns(4), ['Staff Costs', 'Headcount', 'Operating Expenses', 'Other Operating Expenses']):
         metric_card(col, name)
     st.caption('Staff costs are included in operating expenses. Headcount is the latest closing employee count, not a period total.')
     with st.expander('Explore all financial and operational metrics'):
         table = comparison.copy()
-        for field in ['Actual', baseline_title, 'Variance']:
+        for field in [c for c in table.columns if c != 'Metric' and not c.startswith('Variance %')]:
             table[field] = table.apply(lambda item: (
-                f'{item[field]:+,.1f} pp' if field == 'Variance' and '%' in item.Metric and pd.notna(item[field])
+                f'{item[field]:+,.1f} pp' if field.startswith('Variance') and '%' in item.Metric and pd.notna(item[field])
                 else format_metric(item[field], item.Metric, currency)), axis=1)
-        table['Variance %'] = table['Variance %'].map(lambda v: 'Unavailable' if pd.isna(v) else f'{v:+,.1f}%')
+        for field in [c for c in table.columns if c.startswith('Variance %')]:
+            table[field] = table[field].map(lambda v: 'Unavailable' if pd.isna(v) else f'{v:+,.1f}%')
         table['Metric'] = table.Metric.replace(METRIC_LABELS)
         st.dataframe(table, hide_index=True, use_container_width=True)
 
-with tab2:
+if page == 'Sustainability & Operations':
     heading('Sustainable Materials & Manufacturing')
     for col, name, title, inverse in zip(
         st.columns(4), ['production_tonnes', 'Scrap Rate %', 'DSO', 'Cash Conversion Cycle'],
@@ -195,7 +222,7 @@ with tab2:
         st.plotly_chart(fig, use_container_width=True)
         st.caption('Working capital ratios use closing balances and period sales/COGS. Consider seasonality when comparing months, quarters and years.')
 
-with tab3:
+if page == 'Board Pack':
     with card():
         heading(f'Board Reporting · {display_period}')
         st.write('Download the selected period comparison or the full KPI history for your management pack.')
@@ -224,7 +251,7 @@ with tab3:
             file_name=f'sustainable_packaging_board_{selected}.pptx',
             mime='application/vnd.openxmlformats-officedocument.presentationml.presentation')
 
-with tab4:
+if page == 'AI Report':
     heading('Your AI Board Briefing')
     st.caption(f'{display_period} · Insights drawn from the selected period’s calculated KPIs')
     st.info('Generate sends the selected KPI comparison to OpenAI, rather than raw transaction files. Review commentary before sharing.')
@@ -254,7 +281,7 @@ with tab4:
             st.markdown('#### Ready When You Are')
             st.write('Generate a briefing to explore your executive summary, budget performance, risks and proposed actions in report cards.')
 
-with tab5:
+if page == 'Ask Your Data':
     heading('Ask Your Data')
     st.caption('Explore Financials, Materials, Returns, People And Cash')
     st.info('Questions use the loaded datasets across all available periods. Relevant results and requested source records are sent to OpenAI. Review answers against the supporting data.')

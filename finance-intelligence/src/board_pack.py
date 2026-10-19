@@ -12,7 +12,7 @@ from pptx.util import Inches, Pt
 from src.finance import METRIC_GROUPS, compare_scenarios
 from src.presentation import METRIC_LABELS, format_metric, period_label, title_case
 
-NAVY, TEAL, GREY = '142D4E', '008A87', '52677F'
+NAVY, TEAL, GREY = '123F36', '2A6B5C', '637B69'
 
 
 def board_pack(kpis, selected, grain, currency='AED', source='Uploaded data', coverage_note=''):
@@ -33,7 +33,7 @@ def board_pack(kpis, selected, grain, currency='AED', source='Uploaded data', co
     def slide(title, subtitle=''):
         page = prs.slides.add_slide(prs.slide_layouts[6])
         page.background.fill.solid()
-        page.background.fill.fore_color.rgb = RGBColor.from_string('F4F7FB')
+        page.background.fill.fore_color.rgb = RGBColor.from_string('F6F5EF')
         text(page, 'SUSTAINABLE PACKAGING / BOARD REPORT', .5, .2, 12, .3, 11, TEAL, True)
         text(page, title_case(title), .5, .65, 12.3, .65, 28, bold=True)
         text(page, subtitle, .5, 1.35, 12.3, .65, 12, GREY)
@@ -47,7 +47,7 @@ def board_pack(kpis, selected, grain, currency='AED', source='Uploaded data', co
         box = page.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x), Inches(y), Inches(5.95), Inches(1.4))
         box.fill.solid()
         box.fill.fore_color.rgb = RGBColor(255, 255, 255)
-        box.line.color.rgb = RGBColor.from_string('DFE7F0')
+        box.line.color.rgb = RGBColor.from_string('E8DCC4')
         text(page, title_case(metric), x+.15, y+.1, 5.5, .35, 14, GREY)
         text(page, format_metric(actual[metric], metric, currency), x+.15, y+.5, 5.5, .65, 28, bold=True)
     text(page, coverage_note, .55, 5.8, 12, .9, 12, GREY)
@@ -71,7 +71,7 @@ def board_pack(kpis, selected, grain, currency='AED', source='Uploaded data', co
                 cell = table.cell(row_index, column_index)
                 cell.text = value
                 cell.fill.solid()
-                cell.fill.fore_color.rgb = RGBColor.from_string(NAVY if row_index == 0 else ('FFFFFF' if row_index % 2 else 'EAF1F5'))
+                cell.fill.fore_color.rgb = RGBColor.from_string(NAVY if row_index == 0 else ('FFFEFA' if row_index % 2 else 'E8DCC4'))
                 for p in cell.text_frame.paragraphs:
                     p.font.size = Pt(11)
                     p.font.bold = row_index == 0
@@ -90,7 +90,7 @@ def board_pack(kpis, selected, grain, currency='AED', source='Uploaded data', co
         chart.legend.position = XL_LEGEND_POSITION.BOTTOM
         chart.category_axis.tick_labels.font.size = Pt(10)
         chart.value_axis.tick_labels.font.size = Pt(11)
-        for series, color in zip(chart.series, [TEAL, '8A9CB2', 'C98231']):
+        for series, color in zip(chart.series, [TEAL, '8A9D93', 'C49A45']):
             series.format.line.color.rgb = RGBColor.from_string(color)
 
     page = slide('Definitions & board discussion', 'Review results with management before circulation.')

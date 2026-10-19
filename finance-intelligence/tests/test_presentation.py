@@ -53,3 +53,19 @@ def test_trends_share_axis_coordinates_for_all_reporting_grains():
             assert all(list(trace.x) == list(range(len(labels))) for trace in chart.data)
             assert chart.layout.shapes[0].x0 == len(labels)-1
             assert chart.layout.xaxis.range[0] < chart.layout.shapes[0].x0 < chart.layout.xaxis.range[1]
+
+
+def test_combined_chart_has_three_distinct_trends_and_missing_forecast_gaps():
+    data = pd.DataFrame([
+        {'label': '2026-01', 'scenario': 'actual', 'Revenue': 100},
+        {'label': '2026-02', 'scenario': 'actual', 'Revenue': 120},
+        {'label': '2026-01', 'scenario': 'budget', 'Revenue': 110},
+        {'label': '2026-02', 'scenario': 'budget', 'Revenue': 115},
+        {'label': '2026-02', 'scenario': 'forecast', 'Revenue': 118},
+    ])
+    chart = performance_chart(data, 'Revenue', 'Month', '2026-02', 'AED', 'both')
+    assert [trace.name for trace in chart.data] == ['Budget', 'Forecast', 'Actual']
+    assert len({trace.line.dash for trace in chart.data}) == 3
+    assert pd.isna(chart.data[1].y[0])
+    assert len(narrative_sections('## Performance vs budget and forecast\nBoth comparisons.')) == 1
+    assert narrative_sections('## Performance vs budget and forecast\nBoth comparisons.')[0][1] == 'Both comparisons.'

@@ -1,0 +1,14 @@
+{
+  "name": "sustainable-packaging-intelligence",
+  "private": true,
+  "version": "2.0.0",
+  "workspaces": ["frontend"],
+  "engines": {"node": ">=22.12"},
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build --workspace frontend",
+    "test:ui": "playwright test",
+    "test": "npm run test:ui"
+  },
+  "devDependencies": {"@playwright/test": "^1.51.0"}
+}

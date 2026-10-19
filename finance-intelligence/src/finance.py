@@ -173,6 +173,12 @@ def build_kpis(finance: pd.DataFrame, operations: pd.DataFrame, balances: pd.Dat
 
 
 def compare_scenarios(kpis: pd.DataFrame, label: str, baseline='budget'):
+    if baseline == 'both':
+        budget = compare_scenarios(kpis, label, 'budget').rename(columns={
+            'Variance': 'Variance vs Budget', 'Variance %': 'Variance % vs Budget'})
+        forecast = compare_scenarios(kpis, label, 'forecast').drop(columns='Actual').rename(columns={
+            'Variance': 'Variance vs Forecast', 'Variance %': 'Variance % vs Forecast'})
+        return budget.merge(forecast, on='Metric')
     if baseline not in ['budget', 'forecast']:
         raise ValueError('Comparison must be budget or forecast')
     rows = kpis[kpis['label'] == label].set_index('scenario')

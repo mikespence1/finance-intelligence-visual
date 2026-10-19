@@ -46,6 +46,18 @@ def test_forecast_missing_and_zero_denominators():
     assert c['Recycled Input %'].isna().all()
 
 
+def test_combined_comparison_keeps_variances_independent_when_forecast_missing():
+    kpis = build_kpis(*inputs())
+    both = compare_scenarios(kpis, '2026-12', 'both').set_index('Metric')
+    row = both.loc['Revenue']
+    assert row['Variance vs Budget'] == pytest.approx(row.Actual-row.Budget)
+    assert row['Variance vs Forecast'] == pytest.approx(row.Actual-row.Forecast)
+    missing = compare_scenarios(kpis[kpis.scenario != 'forecast'], '2026-12', 'both')
+    assert missing.Forecast.isna().all()
+    assert missing['Variance vs Forecast'].isna().all()
+    assert missing.Budget.notna().all()
+
+
 def test_legacy_uploads_keep_optional_metrics_unavailable():
     f, o, b = inputs()
     f = f[f.account != 'Staff Costs']
