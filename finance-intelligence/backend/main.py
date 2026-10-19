@@ -20,6 +20,7 @@ from src.finance import build_kpis, compare_scenarios, METRIC_GROUPS
 from src.presentation import format_metric, period_label, METRIC_LABELS, LOWER_BETTER, narrative_sections, title_case
 from src.query_agent import ask_data
 from backend.storage import get_store, WorkspaceConflict, WorkspaceTooLarge
+from src.workbook import style_workbook
 
 ROOT = Path(__file__).resolve().parents[1]
 app = FastAPI(title='Sustainable Packaging Intelligence', version='2.0.0')
@@ -280,6 +281,7 @@ def export(kind: Literal['csv', 'xlsx', 'pptx'], response: Response, selection: 
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             frame.to_excel(writer, sheet_name='Board KPIs', index=False)
             kpis.to_excel(writer, sheet_name='KPI History', index=False)
+            style_workbook(writer.book)
         content, mime = output.getvalue(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     else:
         notes = '; '.join(f"{row['dataset']}: {row['months']}/{row['expected']} months" for row in coverage(state, period, selection.grain) if row['scenario'] == 'actual')

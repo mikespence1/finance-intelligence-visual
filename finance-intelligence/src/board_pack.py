@@ -30,6 +30,19 @@ def board_pack(kpis, selected, grain, currency='AED', source='Uploaded data', co
             p.font.color.rgb = RGBColor.from_string(color)
         return box
 
+    def raised_card(page, x, y, width, height):
+        # Layered, editable shapes provide depth without rasterising the pack.
+        shadow = page.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x+.06), Inches(y+.07), Inches(width), Inches(height))
+        shadow.fill.solid()
+        shadow.fill.fore_color.rgb = RGBColor.from_string('C4D0DE')
+        shadow.line.fill.background()
+        box = page.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x), Inches(y), Inches(width), Inches(height))
+        box.fill.gradient()
+        box.fill.gradient_stops[0].color.rgb = RGBColor.from_string('FFFFFF')
+        box.fill.gradient_stops[1].color.rgb = RGBColor.from_string('E8EEF5')
+        box.line.color.rgb = RGBColor.from_string('D5DFEA')
+        return box
+
     def slide(title, subtitle=''):
         page = prs.slides.add_slide(prs.slide_layouts[6])
         page.background.fill.solid()
@@ -38,18 +51,16 @@ def board_pack(kpis, selected, grain, currency='AED', source='Uploaded data', co
         text(page, title_case(title), .5, .65, 12.3, .65, 28, bold=True)
         text(page, subtitle, .5, 1.35, 12.3, .65, 12, GREY)
         text(page, f'{title_period} | {currency} | {source} | {len(prs.slides):02d}', .5, 7.08, 12.3, .25, 10, GREY)
+        raised_card(page, .45, 2.0, 12.35, 4.9)
         return page
 
     actual = kpis[(kpis.label == selected) & (kpis.scenario == 'actual')].iloc[0]
     page = slide('Sustainable packaging performance', f'{title_period} | Monthly board meeting pack' if grain == 'Month' else title_period)
     for i, metric in enumerate(['Revenue', 'EBITDA', 'Scrap Rate %', 'Cash']):
         x, y = .55 + (i % 2) * 6.3, 2.25 + (i // 2) * 1.65
-        box = page.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x), Inches(y), Inches(5.95), Inches(1.4))
-        box.fill.solid()
-        box.fill.fore_color.rgb = RGBColor(255, 255, 255)
-        box.line.color.rgb = RGBColor.from_string('E2E8F0')
-        text(page, title_case(metric), x+.15, y+.1, 5.5, .35, 14, GREY)
-        text(page, format_metric(actual[metric], metric, currency), x+.15, y+.5, 5.5, .65, 28, bold=True)
+        raised_card(page, x, y, 5.95, 1.4)
+        text(page, title_case(metric), x+.15, y+.1, 5.5, .4, 18, GREY)
+        text(page, format_metric(actual[metric], metric, currency), x+.15, y+.5, 5.5, .7, 32, bold=True)
     text(page, coverage_note, .55, 5.8, 12, .9, 12, GREY)
 
     for heading, metrics in METRIC_GROUPS.items():
@@ -73,7 +84,7 @@ def board_pack(kpis, selected, grain, currency='AED', source='Uploaded data', co
                 cell.fill.solid()
                 cell.fill.fore_color.rgb = RGBColor.from_string(NAVY if row_index == 0 else ('FFFFFF' if row_index % 2 else 'E2E8F0'))
                 for p in cell.text_frame.paragraphs:
-                    p.font.size = Pt(11)
+                    p.font.size = Pt(14)
                     p.font.bold = row_index == 0
                     p.font.color.rgb = RGBColor.from_string('FFFFFF' if row_index == 0 else NAVY)
 
@@ -88,8 +99,9 @@ def board_pack(kpis, selected, grain, currency='AED', source='Uploaded data', co
         chart = page.shapes.add_chart(XL_CHART_TYPE.LINE_MARKERS, Inches(.65), Inches(2.1), Inches(12), Inches(4.65), data).chart
         chart.has_legend = True
         chart.legend.position = XL_LEGEND_POSITION.BOTTOM
-        chart.category_axis.tick_labels.font.size = Pt(10)
-        chart.value_axis.tick_labels.font.size = Pt(11)
+        chart.category_axis.tick_labels.font.size = Pt(14)
+        chart.value_axis.tick_labels.font.size = Pt(14)
+        chart.legend.font.size = Pt(14)
         for series, color in zip(chart.series, [TEAL, '667085', 'F26B5B']):
             series.format.line.color.rgb = RGBColor.from_string(color)
 

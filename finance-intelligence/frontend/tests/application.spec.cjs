@@ -44,9 +44,18 @@ test('AI report and grounded chat render responses and sources', async ({ page }
   await page.getByRole('button', { name: 'Generate Briefing' }).click();
   await expect(page.getByRole('heading', { name: 'Executive Summary' })).toBeVisible();
   await page.getByRole('navigation').getByRole('button', { name: 'Ask Your Data', exact: true }).click();
+  const metricsBox = await page.locator('.headline-grid').boundingBox();
+  const promptBox = await page.locator('.chat-input').boundingBox();
+  const examplesBox = await page.getByRole('heading', { name: 'Example Questions' }).boundingBox();
+  expect(promptBox.y).toBeGreaterThanOrEqual(metricsBox.y + metricsBox.height);
+  expect(promptBox.y).toBeLessThan(examplesBox.y);
   await page.getByLabel('Your Question').fill('What was revenue?');
   await page.getByRole('button', { name: 'Send question' }).click();
   await expect(page.getByText('Synthetic revenue is shown below.')).toBeVisible();
+  const answerBox = await page.locator('.chat-message.assistant').boundingBox();
+  const answeredPromptBox = await page.locator('.chat-input').boundingBox();
+  expect(answerBox.y).toBeLessThan(answeredPromptBox.y);
+  await page.screenshot({ path: 'test-results/ask-your-data-desktop.png', fullPage: true });
   await page.getByText('Supporting Data & Calculations', { exact: true }).click();
   await expect(page.locator('.evidence')).toContainText('Revenue');
   await page.getByRole('button', { name: 'Clear Chat' }).click();

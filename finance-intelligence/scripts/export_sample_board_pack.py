@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from src.finance import build_kpis, compare_scenarios
 from src.board_pack import board_pack
+from src.workbook import style_workbook
 
 
 if __name__ == '__main__':
@@ -20,4 +21,5 @@ if __name__ == '__main__':
         compare_scenarios(kpis, '2026-12', 'budget').to_excel(writer, sheet_name='Actual vs Budget', index=False)
         compare_scenarios(kpis, '2026-12', 'forecast').to_excel(writer, sheet_name='Actual vs Forecast', index=False)
         kpis.to_excel(writer, sheet_name='KPI History', index=False)
+        style_workbook(writer.book)
     print('Created synthetic PowerPoint and Excel board packs in examples/')
