@@ -8,13 +8,17 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend import main
+from backend.storage import WorkspaceStore
 
 
 @pytest.fixture
-def client(monkeypatch):
-    monkeypatch.setattr(main, 'sessions', {})
+def client(monkeypatch, tmp_path):
+    store = WorkspaceStore('sqlite:///' + str(tmp_path / 'test.sqlite3'))
+    monkeypatch.setattr(main, 'get_store', lambda: store)
     with TestClient(main.app) as client:
+        client.workspace_store = store
         yield client
+    store.engine.dispose()
 
 
 def test_dashboard_comparison_and_period_filters(client):
@@ -109,9 +113,17 @@ def test_api_failures_do_not_expose_configuration(client, monkeypatch):
 
 def test_expired_workspace_does_not_silently_show_sample_data(client):
     client.get('/api/dashboard')
-    main.sessions.clear()
+    client.workspace_store.delete(client.cookies.get('finance_session'))
     response = client.get('/api/dashboard')
     assert response.status_code == 409
     assert 'expired' in response.json()['detail']
     assert 'Max-Age=0' in response.headers['set-cookie']
     assert client.get('/api/dashboard').json()['source'] == 'Synthetic Sample Data'
+
+
+def test_vercel_sized_upload_and_origin_rules(client, monkeypatch):
+    uploads = files()
+    uploads['finance'] = ('large.csv', b'x' * (main.MAX_FILE + 1), 'text/csv')
+    assert client.post('/api/datasets/upload', files=uploads).status_code == 413
+    monkeypatch.setenv('VERCEL_URL', 'preview-finance.vercel.app')
+    assert client.post('/api/datasets/sample', headers={'Origin': 'https://preview-finance.vercel.app'}).status_code == 200

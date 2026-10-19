@@ -56,11 +56,13 @@ Use the sidebar to open **Financial Performance**, **Sustainability & Operations
 
 The bundled data is synthetic for all 12 months of 2026 and all three scenarios. January–February are quiet; March–May and November are average; June–October and December are busy. No real customer or company records are included.
 
-**Manage Data** accepts the finance, operations and closing-balance files together in CSV/XLSX format. Files are validated before replacing the current workspace. Each file supports up to 10 MB and 100,000 rows; expanded XLSX contents are limited to 50 MB. See [DATA_DICTIONARY.md](DATA_DICTIONARY.md) for all columns, definitions and accounting conventions. Older datasets remain supported and missing optional metrics remain unavailable.
+**Manage Data** accepts the finance, operations and closing-balance files together in CSV/XLSX format. Files are validated before replacing the current workspace. Each file supports up to 1 MB and 100,000 rows; expanded XLSX contents are limited to 50 MB. Requests and generated responses are limited to 4 MB to fit Vercel's function limits. See [DATA_DICTIONARY.md](DATA_DICTIONARY.md) for all columns, definitions and accounting conventions. Older datasets remain supported and missing optional metrics remain unavailable.
 
 Flows sum across months; stocks, headcount and customer credit exposure take the latest closing month; ratios recalculate. Staff costs are included in operating expenses. Return value and wastage cost are analytical measures, not additional deductions from profit. Month-presence coverage is shown for actual and planning scenarios; it is not a reconciliation to the general ledger.
 
-Uploads are held in backend memory for the browser's opaque HttpOnly cookie session. They expire after two hours of inactivity or a backend restart. Another browser receives its own workspace. Expired sessions are reported explicitly rather than silently substituting sample results. This initial service uses one worker and is intended for local operation; multiple workers require a shared session store. Authentication, company access control and durable storage are not implemented, so a public deployment needs those additions. `COOKIE_SECURE=1` enables HTTPS-only session cookies and `APP_ORIGIN` can declare a trusted frontend origin.
+Uploads and chat history are stored in a shared PostgreSQL database when `DATABASE_URL` is configured. Locally, an ignored SQLite database is created automatically in `.local/workspaces.sqlite3`. Both stores use the same versioned workspace model: browser sessions remain isolated, stale concurrent changes are rejected, and restarts do not discard data. Workspaces expire after two hours of inactivity; expired payloads are deleted when storage is accessed. Clearing browser cookies loses access to that workspace. The workspace identifier is stored hashed in the database and the browser cookie is HttpOnly. This is browser-session isolation, not user authentication. Public company use still requires login and company access controls.
+
+Vercel requires PostgreSQL and never falls back to local files or process memory. Secure cookies are automatic on Vercel; `COOKIE_SECURE=1` enables them elsewhere. Vercel deployment/production origins are recognised automatically when system environment variables are enabled; `APP_ORIGIN` can additionally declare a trusted custom frontend origin. See [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md) for the remaining dashboard steps.
 
 ## Board Packs & AI
 
@@ -79,6 +81,7 @@ The editable prompt is [prompts/data_agent.md](prompts/data_agent.md). The agent
 | `frontend/vite.config.js` | Node.js/Vite development proxy and production build |
 | `scripts/dev.mjs` | Starts the frontend and Python backend together |
 | `backend/main.py` | FastAPI validation, per-browser datasets, API and exports |
+| `backend/storage.py` | Shared PostgreSQL workspace storage and automatic local SQLite fallback |
 | `src/finance.py` | Shared deterministic KPI and scenario calculations |
 | `src/query_agent.py` | Bounded read-only AI data tools and evidence validation |
 | `src/ai.py` | Server-only API configuration and commentary |
@@ -98,5 +101,7 @@ npm run test:ui
 ```
 
 Python tests cover aggregation, comparisons, tool restrictions, API session isolation, validated uploads, AI error handling and all export formats. Browser tests cover React filters/navigation, uploads, PowerPoint downloads, AI report/chat rendering and mobile overflow. API and browser tests simulate AI replies; they never call OpenAI. Browser tests start an isolated service on port 8765 with AI disabled, using installed Microsoft Edge on Windows. Elsewhere install Playwright Chromium or set `PLAYWRIGHT_CHANNEL` to a supported installed browser.
+
+Storage tests exercise real SQLite databases shared across independent store instances, including restart recovery, chat/data isolation, expiry and concurrent-update rejection. They do not connect to Neon or create a cloud account. Vercel deployment must still be verified against the connected PostgreSQL database.
 
 The optional legacy Streamlit UI needs `pip install -r requirements-legacy.txt`; its tests skip when Streamlit is absent. It is retained as a migration reference, while React/FastAPI is the primary application.

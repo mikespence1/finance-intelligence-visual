@@ -4,8 +4,7 @@ import json
 import os
 from pathlib import Path
 import secrets
-from threading import Lock, BoundedSemaphore
-import time
+from threading import BoundedSemaphore
 from typing import Literal
 from zipfile import ZipFile, BadZipFile
 
@@ -20,14 +19,31 @@ from src.board_pack import board_pack
 from src.finance import build_kpis, compare_scenarios, METRIC_GROUPS
 from src.presentation import format_metric, period_label, METRIC_LABELS, LOWER_BETTER, narrative_sections, title_case
 from src.query_agent import ask_data
+from backend.storage import get_store, WorkspaceConflict, WorkspaceTooLarge
 
 ROOT = Path(__file__).resolve().parents[1]
 app = FastAPI(title='Sustainable Packaging Intelligence', version='2.0.0')
-sessions = {}
-session_lock = Lock()
 ai_slots = BoundedSemaphore(2)
-SESSION_TTL = 7200
-MAX_FILE = 10 * 1024 * 1024
+MAX_FILE = 1024 * 1024
+MAX_BODY = 4 * 1024 * 1024
+
+
+def database():
+    try:
+        return get_store()
+    except Exception:
+        raise HTTPException(503, 'Workspace storage is unavailable. Connect a PostgreSQL database and check DATABASE_URL in Vercel settings.') from None
+
+
+def save_workspace(state):
+    try:
+        state.store.save(state)
+    except WorkspaceConflict:
+        raise HTTPException(409, 'Your workspace changed in another request. Refresh and try again.') from None
+    except WorkspaceTooLarge:
+        raise HTTPException(413, 'The workspace is too large. Upload a smaller reporting dataset or clear chat history.') from None
+    except Exception:
+        raise HTTPException(503, 'Workspace storage could not be updated. Please try again.') from None
 
 
 class Selection(BaseModel):
@@ -49,12 +65,17 @@ def sample():
 async def request_guards(request, call_next):
     origin = request.headers.get('origin')
     allowed = {str(request.base_url).rstrip('/'), 'http://localhost:5173', 'http://127.0.0.1:5173', os.environ.get('APP_ORIGIN', '')}
+    for variable in ['VERCEL_URL', 'VERCEL_PROJECT_PRODUCTION_URL']:
+        if os.environ.get(variable):
+            allowed.add('https://' + os.environ[variable])
     if request.method not in ['GET', 'HEAD', 'OPTIONS'] and origin and origin not in allowed:
         return JSONResponse({'detail': 'Origin not permitted'}, status_code=403)
     length = request.headers.get('content-length', '0')
-    if length.isdigit() and int(length) > 3 * MAX_FILE + 65536:
-        return JSONResponse({'detail': 'Upload exceeds 30 MB total'}, status_code=413)
+    if length.isdigit() and int(length) > MAX_BODY:
+        return JSONResponse({'detail': 'Request exceeds 4 MB. Each uploaded file must be at most 1 MB.'}, status_code=413)
     response = await call_next(request)
+    if response.headers.get('content-length', '0').isdigit() and int(response.headers.get('content-length', '0')) > MAX_BODY:
+        return JSONResponse({'detail': 'Reporting output exceeds 4 MB. Use a smaller dataset or reporting window.'}, status_code=413)
     if request.url.path.startswith('/api'):
         response.headers['Cache-Control'] = 'no-store'
     response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -62,24 +83,24 @@ async def request_guards(request, call_next):
 
 
 def session(request: Request, response: Response):
-    now = time.monotonic()
-    with session_lock:
-        for sid in [key for key, val in sessions.items() if now - val['touched'] > SESSION_TTL]:
-            del sessions[sid]
-        sid = request.cookies.get('finance_session')
-        if sid and sid not in sessions:
+    store = database()
+    sid = request.cookies.get('finance_session')
+    try:
+        state = store.load(sid) if sid else None
+        if sid and state is None:
             raise HTTPException(409, 'Your workspace expired. Load sample data or upload your files again.',
                 headers={'Set-Cookie': 'finance_session=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict'})
-        if sid not in sessions:
-            if len(sessions) >= 100:
-                raise HTTPException(503, 'Workspace capacity reached; try again later')
+        if state is None:
             sid = secrets.token_urlsafe(32)
-            sessions[sid] = {'frames': sample(), 'source': 'Synthetic Sample Data', 'version': secrets.token_hex(8),
-                             'history': [], 'touched': now}
-        sessions[sid]['touched'] = now
-        response.set_cookie('finance_session', sid, httponly=True, samesite='strict', max_age=SESSION_TTL,
-                            secure=os.environ.get('COOKIE_SECURE') == '1')
-        return sessions[sid]
+            state = store.create(sid, {'frames': sample(), 'source': 'Synthetic Sample Data',
+                                      'version': secrets.token_hex(8), 'history': []})
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(503, 'Workspace storage is unavailable. Please check the database connection.') from None
+    response.set_cookie('finance_session', sid, httponly=True, samesite='strict', max_age=store.ttl,
+                        secure=bool(os.environ.get('VERCEL')) or os.environ.get('COOKIE_SECURE') == '1')
+    return state
 
 
 def records(frame):
@@ -113,6 +134,12 @@ def coverage(state, period, grain):
 
 @app.get('/api/health')
 def health():
+    try:
+        database().check()
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(503, 'Workspace storage is unavailable. Check DATABASE_URL and the database connection.') from None
     return {'status': 'ok'}
 
 
@@ -131,6 +158,7 @@ def dashboard(selection: Selection = Depends(), state=Depends(session)):
 @app.post('/api/datasets/sample')
 def reset_sample(state=Depends(session)):
     state.update(frames=sample(), source='Synthetic Sample Data', history=[], version=secrets.token_hex(8))
+    save_workspace(state)
     return {'source': state['source']}
 
 
@@ -141,7 +169,7 @@ def read_upload(file):
     content = file.file.read(MAX_FILE + 1)
     file.file.close()
     if not content or len(content) > MAX_FILE:
-        raise HTTPException(413, 'Each file must be nonempty and at most 10 MB')
+        raise HTTPException(413, 'Each file must be nonempty and at most 1 MB')
     try:
         if name.endswith('.xlsx'):
             with ZipFile(BytesIO(content)) as archive:
@@ -168,11 +196,12 @@ def upload(finance: UploadFile = File(...), operations: UploadFile = File(...),
     except (ValueError, KeyError, TypeError) as error:
         raise HTTPException(422, str(error)) from None
     state.update(frames=frames, source='Uploaded Data', history=[], version=secrets.token_hex(8))
+    save_workspace(state)
     return {'source': state['source']}
 
 
 def ai_request(function):
-    if os.environ.get('AI_DISABLED') == '1':
+    if os.environ.get('AI_DISABLED', '1' if os.environ.get('VERCEL') else '0') == '1':
         raise HTTPException(503, 'AI is disabled in this environment.')
     if not ai_slots.acquire(blocking=False):
         raise HTTPException(429, 'The analyst is busy. Please try again shortly.')
@@ -198,12 +227,14 @@ def commentary(selection: Selection, state=Depends(session)):
 def chat_history(currency: str = Query(default='AED', pattern=r'^[A-Za-z ]{1,8}$'), state=Depends(session)):
     if state.get('history_currency') != currency:
         state.update(history=[], history_currency=currency)
+        save_workspace(state)
     return {'messages': state['history']}
 
 
 @app.delete('/api/chat')
 def clear_chat(state=Depends(session)):
     state['history'] = []
+    save_workspace(state)
     return {'messages': []}
 
 
@@ -222,6 +253,7 @@ def chat(question: Question, state=Depends(session)):
         raise HTTPException(409, 'Data changed during the question. Please ask again.')
     state['history'] = (state['history'] + [{'role': 'user', 'content': question.question},
                          {'role': 'assistant', 'content': result['answer'], 'reply': result}])[-20:]
+    save_workspace(state)
     return result
 
 
@@ -231,7 +263,7 @@ def definitions():
 
 
 @app.get('/api/exports/{kind}')
-def export(kind: Literal['csv', 'xlsx', 'pptx'], selection: Selection = Depends(), state=Depends(session)):
+def export(kind: Literal['csv', 'xlsx', 'pptx'], response: Response, selection: Selection = Depends(), state=Depends(session)):
     kpis, period, comparison = selected_data(state, selection)
     title = period_label(period, selection.grain)
     filename = f'sustainable_packaging_board_{period}.{kind}'
@@ -253,7 +285,10 @@ def export(kind: Literal['csv', 'xlsx', 'pptx'], selection: Selection = Depends(
         notes = '; '.join(f"{row['dataset']}: {row['months']}/{row['expected']} months" for row in coverage(state, period, selection.grain) if row['scenario'] == 'actual')
         content = board_pack(kpis, period, selection.grain, selection.currency, state['source'], notes)
         mime = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-    return Response(content, media_type=mime, headers={'Content-Disposition': f'attachment; filename="{filename}"'})
+    headers = {'Content-Disposition': f'attachment; filename="{filename}"'}
+    if response.headers.get('set-cookie'):
+        headers['Set-Cookie'] = response.headers['set-cookie']
+    return Response(content, media_type=mime, headers=headers)
 
 
 # After npm run build, FastAPI serves the React application from the same origin.

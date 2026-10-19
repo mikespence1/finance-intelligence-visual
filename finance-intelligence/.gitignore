@@ -12,3 +12,5 @@ frontend/dist/
 !.env.example
 playwright-report/
 test-results/
+.local/
+.vercel/

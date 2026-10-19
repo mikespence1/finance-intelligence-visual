@@ -139,7 +139,11 @@ function App() {
   }
   async function upload(event) {
     event.preventDefault(); setBusy(true); setError('');
-    try { const form = new FormData(event.currentTarget); await api('/datasets/upload', { method: 'POST', body: form });
+    try { const form = new FormData(event.currentTarget);
+      for (const file of form.values()) {
+        if (file instanceof File && file.size > 1024 * 1024) throw new Error('Each source file must be at most 1 MB. Please upload a smaller dataset.');
+      }
+      await api('/datasets/upload', { method: 'POST', body: form });
       setSelection(s => ({ ...s, period: '' })); setReload(n => n + 1); setUploadOpen(false);
     } catch (e) { setError(e.message); } finally { setBusy(false); }
   }
@@ -215,7 +219,7 @@ function App() {
         </>}
       </main>
     </div>
-    {uploadOpen && <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget && !busy) setUploadOpen(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="upload-title"><div className="panel-heading"><div><p className="eyebrow">YOUR REPORTING WORKSPACE</p><h2 id="upload-title">Manage Source Data</h2></div><button className="icon-button" aria-label="Close data dialog" disabled={busy} onClick={() => setUploadOpen(false)}><X/></button></div><p>Upload all three files together. Existing metrics, actual/budget/forecast scenarios and extended sustainability columns are supported.</p><form onSubmit={upload}>{[['finance', 'Financial Accounts'], ['operations', 'Operations & Materials'], ['balances', 'Closing Balances & Headcount']].map(([name, label]) => <label className="file-input" key={name}>{label}<input type="file" name={name} accept=".csv,.xlsx" required disabled={busy}/></label>)}<p className="footnote">CSV or XLSX · Maximum 10 MB and 100,000 rows per file. Files stay in server memory for this browser session and expire after two hours of inactivity or a server restart.</p><button className="button primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={17}/> : <Upload size={17}/>}Validate & Load Files</button></form><div className="modal-divider">OR EXPLORE THE APPLICATION</div><button className="button secondary" disabled={busy} onClick={switchSample}><Sprout size={17}/>Load Seasonal Sample Data</button>{error && <p role="alert" className="negative">{error}</p>}</section></div>}
+    {uploadOpen && <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget && !busy) setUploadOpen(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="upload-title"><div className="panel-heading"><div><p className="eyebrow">YOUR REPORTING WORKSPACE</p><h2 id="upload-title">Manage Source Data</h2></div><button className="icon-button" aria-label="Close data dialog" disabled={busy} onClick={() => setUploadOpen(false)}><X/></button></div><p>Upload all three files together. Existing metrics, actual/budget/forecast scenarios and extended sustainability columns are supported.</p><form onSubmit={upload}>{[['finance', 'Financial Accounts'], ['operations', 'Operations & Materials'], ['balances', 'Closing Balances & Headcount']].map(([name, label]) => <label className="file-input" key={name}>{label}<input type="file" name={name} accept=".csv,.xlsx" required disabled={busy}/></label>)}<p className="footnote">CSV or XLSX · Maximum 1 MB and 100,000 rows per file. Your files and chat are saved privately for this browser workspace and expire after two hours of inactivity.</p><button className="button primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={17}/> : <Upload size={17}/>}Validate & Load Files</button></form><div className="modal-divider">OR EXPLORE THE APPLICATION</div><button className="button secondary" disabled={busy} onClick={switchSample}><Sprout size={17}/>Load Seasonal Sample Data</button>{error && <p role="alert" className="negative">{error}</p>}</section></div>}
   </div>;
 }
 
