@@ -127,3 +127,28 @@ def test_vercel_sized_upload_and_origin_rules(client, monkeypatch):
     assert client.post('/api/datasets/upload', files=uploads).status_code == 413
     monkeypatch.setenv('VERCEL_URL', 'preview-finance.vercel.app')
     assert client.post('/api/datasets/sample', headers={'Origin': 'https://preview-finance.vercel.app'}).status_code == 200
+
+
+def test_templates_and_partial_uploads(client):
+    from zipfile import ZipFile
+    response = client.get('/api/datasets/templates')
+    assert response.status_code == 200
+    archive = ZipFile(BytesIO(response.content))
+    for name in ['finance', 'operations', 'balances']:
+        payload = archive.read(f'{name}_template.csv')
+        assert client.post('/api/datasets/upload', files={name: (f'{name}.csv', payload, 'text/csv')}).status_code == 200
+        data = client.get('/api/dashboard').json()
+        rows = {row['Metric']: row for row in data['comparison']}
+        assert (rows['Revenue']['Actual'] is not None) == (name == 'finance')
+        assert (rows['Cash']['Actual'] is not None) == (name == 'balances')
+        for kind in ['csv', 'xlsx', 'pptx']:
+            assert client.get(f'/api/exports/{kind}').status_code == 200
+    assert client.post('/api/datasets/upload', files={'finance': ('finance.csv', b'period,scenario,account,amount\n2026-01-01,actual,Revenue,100\n2026-01-01,budget,Revenue,\n', 'text/csv')}).status_code == 200
+    rows = {row['Metric']: row for row in client.get('/api/dashboard').json()['comparison']}
+    assert rows['Revenue']['Actual'] == 100
+    assert rows['Revenue']['Budget'] is None
+    assert rows['EBITDA']['Actual'] is None
+    assert client.post('/api/datasets/upload', files={'operations': ('operations.csv', b'period,scenario,production_tonnes\n2026-01-01,actual,0\n', 'text/csv')}).status_code == 200
+    rows = {row['Metric']: row for row in client.get('/api/dashboard').json()['comparison']}
+    assert rows['production_tonnes']['Actual'] == 0
+    assert rows['scrap_tonnes']['Actual'] is None

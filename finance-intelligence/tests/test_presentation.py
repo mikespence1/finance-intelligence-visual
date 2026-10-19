@@ -10,7 +10,7 @@ def test_period_labels_are_readable_and_preserve_year():
 
 
 def test_missing_metrics_are_not_shown_as_numbers():
-    assert format_metric(float('nan'), 'Revenue', 'AED') == 'Unavailable'
+    assert format_metric(float('nan'), 'Revenue', 'AED') == 'No Data'
     assert format_metric(25, 'DSO', 'AED') == '25.0 days'
 
 

@@ -10,7 +10,7 @@ from zipfile import ZipFile, BadZipFile
 
 import pandas as pd
 from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, Response, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -156,6 +156,20 @@ def dashboard(selection: Selection = Depends(), state=Depends(session)):
             'coverage': coverage(state, period, selection.grain)}
 
 
+@app.get('/api/datasets/templates')
+def templates():
+    """Small, independently uploadable examples with all supported columns."""
+    output = BytesIO()
+    with ZipFile(output, 'w') as archive:
+        for name, frame in zip(['finance', 'operations', 'balances'], sample()):
+            # Include one reporting month and its three scenarios.
+            period = frame.period.min()
+            archive.writestr(f'{name}_template.csv', frame[frame.period == period].to_csv(index=False))
+        archive.writestr('README.txt', 'Upload any one or more CSV templates in Manage Data. Each load replaces the workspace datasets; omitted files are empty, not sample data. Keep period and scenario; finance also needs account and amount column headers. Numeric cells and operations/balance metric columns may be left blank or omitted. Missing inputs display No Data, while an explicit 0 is a reported zero. Include at least one actual row. Scenarios: actual, budget, forecast. Dates: YYYY-MM-DD. Expenses are positive; Staff Costs are included in Operating Expenses. Sample values are illustrative: replace or delete them before loading your own data.')
+    return StreamingResponse(BytesIO(output.getvalue()), media_type='application/zip',
+        headers={'Content-Disposition': 'attachment; filename="data_load_templates.zip"'})
+
+
 @app.post('/api/datasets/sample')
 def reset_sample(state=Depends(session)):
     state.update(frames=sample(), source='Synthetic Sample Data', history=[], version=secrets.token_hex(8))
@@ -187,9 +201,14 @@ def read_upload(file):
 
 
 @app.post('/api/datasets/upload')
-def upload(finance: UploadFile = File(...), operations: UploadFile = File(...),
-                 balances: UploadFile = File(...), state=Depends(session)):
-    frames = tuple(read_upload(file) for file in [finance, operations, balances])
+def upload(finance: UploadFile | None = File(None), operations: UploadFile | None = File(None),
+                 balances: UploadFile | None = File(None), state=Depends(session)):
+    files = [finance, operations, balances]
+    if not any(files):
+        raise HTTPException(422, 'Choose at least one source file')
+    columns = [['period', 'scenario', 'account', 'amount'], ['period', 'scenario'], ['period', 'scenario']]
+    frames = tuple(read_upload(file) if file else pd.DataFrame(columns=cols)
+                   for file, cols in zip(files, columns))
     try:
         kpis = build_kpis(*frames)
         if not (kpis.scenario == 'actual').any():

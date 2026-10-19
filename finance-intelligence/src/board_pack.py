@@ -74,9 +74,9 @@ def board_pack(kpis, selected, grain, currency='AED', source='Uploaded data', co
         for row_index, values in enumerate([headers] + [
             [title_case(METRIC_LABELS.get(m, m)), format_metric(actual[m], m, currency),
              format_metric(budget.loc[m, 'Budget'], m, currency),
-             ('Unavailable' if pd.isna(budget.loc[m, 'Variance']) else f"{budget.loc[m, 'Variance']:+,.1f}" + (' pp' if '%' in m else '')),
+             ('No Data' if pd.isna(budget.loc[m, 'Variance']) else f"{budget.loc[m, 'Variance']:+,.1f}" + (' pp' if '%' in m else '')),
              format_metric(forecast.loc[m, 'Forecast'], m, currency),
-             ('Unavailable' if pd.isna(forecast.loc[m, 'Variance']) else f"{forecast.loc[m, 'Variance']:+,.1f}" + (' pp' if '%' in m else ''))]
+             ('No Data' if pd.isna(forecast.loc[m, 'Variance']) else f"{forecast.loc[m, 'Variance']:+,.1f}" + (' pp' if '%' in m else ''))]
             for m in metrics]):
             for column_index, value in enumerate(values):
                 cell = table.cell(row_index, column_index)

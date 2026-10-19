@@ -34,7 +34,7 @@ function unit(metric, currency) {
   return currency;
 }
 function number(value, metric, currency, compact = false) {
-  if (value === null || value === undefined || !Number.isFinite(value)) return 'Unavailable';
+  if (value === null || value === undefined || !Number.isFinite(value)) return 'No Data';
   const suffix = unit(metric, currency);
   const formatted = new Intl.NumberFormat('en', { maximumFractionDigits: ['%', 'days', 'tonnes'].includes(suffix) ? 1 : compact ? 1 : 0,
     notation: compact && Math.abs(value) >= 1000000 ? 'compact' : 'standard' }).format(value);
@@ -48,7 +48,7 @@ function variance(row, target, selection) {
   const both = selection.baseline === 'both';
   const delta = row[both ? `Variance vs ${title(target)}` : 'Variance'];
   const relative = row[both ? `Variance % vs ${title(target)}` : 'Variance %'];
-  return { delta, text: delta == null ? 'Unavailable' : row.Metric.includes('%') ? `${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pp`
+  return { delta, text: delta == null ? 'No Data' : row.Metric.includes('%') ? `${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pp`
     : relative != null ? `${relative >= 0 ? '+' : ''}${relative.toFixed(1)}%`
     : `${delta >= 0 ? '+' : ''}${number(delta, row.Metric, selection.currency)}` };
 }
@@ -140,6 +140,7 @@ function App() {
   async function upload(event) {
     event.preventDefault(); setBusy(true); setError('');
     try { const form = new FormData(event.currentTarget);
+    for (const [name, file] of [...form.entries()]) if (file instanceof File && !file.name) form.delete(name);
       for (const file of form.values()) {
         if (file instanceof File && file.size > 1024 * 1024) throw new Error('Each source file must be at most 1 MB. Please upload a smaller dataset.');
       }
@@ -175,7 +176,7 @@ function App() {
       <div className="sidebar-footer"><span className="status-dot"/>Local Workspace<span>v2.0</span></div>
     </aside>
     <div className="workspace-main">
-      <header className="topbar"><div className="breadcrumb"><button className="icon-button mobile-toggle" aria-label="Open navigation" onClick={() => setNavOpen(true)}><PanelLeftOpen size={22}/></button><span>Workspace</span><ChevronRight size={14}/><strong>{page}</strong></div><div className="top-actions"><span className="source-pill"><span className="status-dot"/>{data?.source || 'Connecting'}</span><button className="button secondary" onClick={() => setUploadOpen(true)} disabled={busy || loading}><Upload size={16}/>Manage Data</button><span className="avatar" title="Management Workspace">SP</span></div></header>
+      <header className="topbar"><div className="breadcrumb"><button className="icon-button mobile-toggle" aria-label="Open navigation" onClick={() => setNavOpen(true)}><PanelLeftOpen size={22}/></button><span>Workspace</span><ChevronRight size={14}/><strong>{page}</strong></div><div className="top-actions"><span className="source-pill"><span className="status-dot"/>{data?.source || 'Connecting'}</span><a className="button secondary template-download" href="/api/datasets/templates" download="data_load_templates.zip"><ArrowDownToLine size={16}/>Templates</a><button className="button secondary" onClick={() => setUploadOpen(true)} disabled={busy || loading}><Upload size={16}/>Manage Data</button><span className="avatar" title="Management Workspace">SP</span></div></header>
       <main>
         <div className="page-heading"><div><p className="eyebrow">FINANCE INTELLIGENCE / MANAGEMENT REPORTING</p><h1>{page}</h1><p className="page-description">{page === 'Financial Performance' ? 'The numbers that matter. A clearer view of what comes next.' : page === 'Sustainability & Operations' ? 'Track your materials, customer experience and operational resilience.' : page === 'Board Pack' ? 'From performance data to a board-ready conversation.' : page === 'AI Report' ? 'Turn calculated results into a focused management briefing.' : 'A conversation with your company’s performance data.'}</p></div><div className="heading-seal"><Sprout size={22}/><span>Built For<br/><b>Sustainable Growth</b></span></div></div>
         <section className="filter-bar" aria-label="Reporting filters">
@@ -221,13 +222,13 @@ function App() {
         </>}
       </main>
     </div>
-    {uploadOpen && <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget && !busy) setUploadOpen(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="upload-title"><div className="panel-heading"><div><p className="eyebrow">YOUR REPORTING WORKSPACE</p><h2 id="upload-title">Manage Source Data</h2></div><button className="icon-button" aria-label="Close data dialog" disabled={busy} onClick={() => setUploadOpen(false)}><X/></button></div><p>Upload all three files together. Existing metrics, actual/budget/forecast scenarios and extended sustainability columns are supported.</p><form onSubmit={upload}>{[['finance', 'Financial Accounts'], ['operations', 'Operations & Materials'], ['balances', 'Closing Balances & Headcount']].map(([name, label]) => <label className="file-input" key={name}>{label}<input type="file" name={name} accept=".csv,.xlsx" required disabled={busy}/></label>)}<p className="footnote">CSV or XLSX · Maximum 1 MB and 100,000 rows per file. Your files and chat are saved privately for this browser workspace and expire after two hours of inactivity.</p><button className="button primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={17}/> : <Upload size={17}/>}Validate & Load Files</button></form><div className="modal-divider">OR EXPLORE THE APPLICATION</div><button className="button secondary" disabled={busy} onClick={switchSample}><Sprout size={17}/>Load Seasonal Sample Data</button>{error && <p role="alert" className="negative">{error}</p>}</section></div>}
+    {uploadOpen && <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget && !busy) setUploadOpen(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="upload-title"><div className="panel-heading"><div><p className="eyebrow">YOUR REPORTING WORKSPACE</p><h2 id="upload-title">Manage Source Data</h2></div><button className="icon-button" aria-label="Close data dialog" disabled={busy} onClick={() => setUploadOpen(false)}><X/></button></div><p>Upload any one or more files. Each load replaces the current datasets. Omitted files and blank numeric fields display No Data; enter 0 only for a reported zero. Include at least one actual row. Download Templates above for sample CSV files and instructions.</p><form onSubmit={upload}>{[['finance', 'Financial Accounts'], ['operations', 'Operations & Materials'], ['balances', 'Closing Balances & Headcount']].map(([name, label]) => <label className="file-input" key={name}>{label}<input type="file" name={name} accept=".csv,.xlsx" disabled={busy}/></label>)}<p className="footnote">CSV or XLSX · Maximum 1 MB and 100,000 rows per file. Your files and chat are saved privately for this browser workspace and expire after two hours of inactivity.</p><button className="button primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={17}/> : <Upload size={17}/>}Validate & Load Files</button></form><div className="modal-divider">OR EXPLORE THE APPLICATION</div><button className="button secondary" disabled={busy} onClick={switchSample}><Sprout size={17}/>Load Seasonal Sample Data</button>{error && <p role="alert" className="negative">{error}</p>}</section></div>}
   </div>;
 }
 
 function Evidence({ rows }) {
   const columns = [...new Set(rows.flatMap(row => Object.keys(row)))];
-  return <div className="table-scroll evidence"><table><thead><tr>{columns.map(c => <th key={c}>{c}</th>)}</tr></thead><tbody>{rows.map((r, i) => <tr key={i}>{columns.map(c => <td key={c}>{r[c] == null ? 'Unavailable' : String(r[c])}</td>)}</tr>)}</tbody></table></div>;
+  return <div className="table-scroll evidence"><table><thead><tr>{columns.map(c => <th key={c}>{c}</th>)}</tr></thead><tbody>{rows.map((r, i) => <tr key={i}>{columns.map(c => <td key={c}>{r[c] == null ? 'No Data' : String(r[c])}</td>)}</tr>)}</tbody></table></div>;
 }
 function Definitions() {
   const [text, setText] = useState('');

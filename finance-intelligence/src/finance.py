@@ -44,9 +44,11 @@ def normalize_finance(data: pd.DataFrame) -> pd.DataFrame:
         raise ValueError('Unknown accounts: ' + ', '.join(sorted(set(df.loc[~df.account.isin(ACCOUNTS), 'account']))))
     if not df['scenario'].isin(SCENARIOS).all():
         raise ValueError('Scenario must be actual, budget or forecast')
+    if df['period'].isna().any():
+        raise ValueError('Finance input contains missing periods')
     df['amount'] = pd.to_numeric(df['amount'], errors='raise')
     _reject_infinity(df, ['amount'])
-    if df[['period', 'account', 'scenario', 'amount']].isna().any().any():
+    if df[['period', 'account', 'scenario']].isna().any().any():
         raise ValueError('Finance input contains missing required values')
     # Input convention: revenue and expense categories both entered as positive amounts.
     if (df['amount'] < 0).any():
@@ -55,14 +57,14 @@ def normalize_finance(data: pd.DataFrame) -> pd.DataFrame:
 
 
 def normalize_ops(data: pd.DataFrame) -> pd.DataFrame:
-    required = {'period', 'scenario', 'production_tonnes', 'scrap_tonnes', 'energy_cost'}
+    required = {'period', 'scenario'}
     if not required.issubset(data.columns):
         raise ValueError('Operations input requires: ' + ', '.join(sorted(required)))
     df = data.copy()
     df['period'] = pd.to_datetime(df['period'], errors='raise').dt.to_period('M').dt.to_timestamp()
     df['scenario'] = df['scenario'].astype(str).str.strip().str.lower()
     for c in ['production_tonnes', 'scrap_tonnes', 'energy_cost']:
-        df[c] = pd.to_numeric(df[c], errors='raise')
+        df[c] = pd.to_numeric(df[c], errors='raise') if c in df else float('nan')
     for c in OPS_EXTRA:
         df[c] = pd.to_numeric(df[c], errors='raise') if c in df else float('nan')
     _reject_infinity(df, ['production_tonnes', 'scrap_tonnes', 'energy_cost'] + OPS_EXTRA)
@@ -83,14 +85,14 @@ def normalize_ops(data: pd.DataFrame) -> pd.DataFrame:
 
 
 def normalize_balances(data: pd.DataFrame) -> pd.DataFrame:
-    required = {'period', 'scenario', *STOCK_COLUMNS}
+    required = {'period', 'scenario'}
     if not required.issubset(data.columns):
         raise ValueError('Balance sheet input requires: ' + ', '.join(sorted(required)))
     df = data.copy()
     df['period'] = pd.to_datetime(df['period'], errors='raise').dt.to_period('M').dt.to_timestamp()
     df['scenario'] = df['scenario'].astype(str).str.strip().str.lower()
     for c in STOCK_COLUMNS:
-        df[c] = pd.to_numeric(df[c], errors='raise')
+        df[c] = pd.to_numeric(df[c], errors='raise') if c in df else float('nan')
     for c in BALANCE_EXTRA:
         df[c] = pd.to_numeric(df[c], errors='raise') if c in df else float('nan')
     _reject_infinity(df, STOCK_COLUMNS + BALANCE_EXTRA)
@@ -132,16 +134,17 @@ def build_kpis(finance: pd.DataFrame, operations: pd.DataFrame, balances: pd.Dat
     b = normalize_balances(balances)
     for df in (f, o, b):
         df['label'] = _period_label(df['period'], grain)
-    staff = f[f.account == 'Staff Costs'].groupby(['label', 'scenario'])['amount'].sum()
-    month_counts = f.groupby(['label', 'scenario']).period.nunique()
-    staff_counts = f[f.account == 'Staff Costs'].groupby(['label', 'scenario']).period.nunique()
-    staff = staff.where(staff_counts.reindex(staff.index) == month_counts.reindex(staff.index))
-    f = f.groupby(['label', 'scenario', 'account'], as_index=False)['amount'].sum()
-    p = f.pivot_table(index=['label','scenario'], columns='account', values='amount', aggfunc='sum', fill_value=0).reset_index()
-    for metric in FLOW_METRICS:
-        if metric not in p:
-            p[metric] = 0.0
-    p['Staff Costs'] = [staff.get((row.label, row.scenario), float('nan')) for row in p.itertuples()]
+    # Keep the union of source periods, even when no finance file was supplied.
+    keys = pd.concat([df[['label', 'scenario']] for df in (f, o, b) if not df.empty]).drop_duplicates()
+    p = keys.copy()
+    financial_months = f.groupby(['label', 'scenario']).period.nunique()
+    for metric in FLOW_METRICS + ['Staff Costs']:
+        source = f[f.account == metric]
+        grouped = source.groupby(['label', 'scenario'])
+        totals = grouped.amount.agg(lambda values: values.sum() if values.notna().all() else float('nan'))
+        counts = grouped.period.nunique()
+        totals = totals.where(counts == financial_months.reindex(counts.index))
+        p[metric] = [totals.get((row.label, row.scenario), float('nan')) for row in p.itertuples()]
     if (p['Staff Costs'] > p['Operating Expenses']).any():
         raise ValueError('Staff Costs must be included within Operating Expenses, not added on top')
     p['Gross Profit'] = p['Revenue'] - p['Cost of Sales']

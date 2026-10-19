@@ -34,7 +34,7 @@ def period_label(label, grain):
 
 def format_metric(value, name, currency):
     if pd.isna(value):
-        return 'Unavailable'
+        return 'No Data'
     if '%' in name:
         return f'{value:,.1f}%'
     if name in ['DSO', 'DIO', 'DPO', 'Cash Conversion Cycle', 'Days']:

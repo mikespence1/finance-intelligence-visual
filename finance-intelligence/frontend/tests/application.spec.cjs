@@ -74,3 +74,21 @@ test('mobile layout keeps navigation, cards and charts inside the viewport', asy
   await expect(page.getByRole('heading', { name: 'Board Pack', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+
+test('templates download and partial upload show No Data cards', async ({ page }) => {
+  await page.goto('/');
+  const download = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Templates', exact: true }).click();
+  expect((await download).suggestedFilename()).toBe('data_load_templates.zip');
+  await page.getByRole('button', { name: 'Manage Data' }).click();
+  await page.getByLabel('Financial Accounts', { exact: true }).setInputFiles({
+    name: 'partial.csv', mimeType: 'text/csv',
+    buffer: Buffer.from('period,scenario,account,amount\n2026-01-01,actual,Revenue,100\n'),
+  });
+  await page.getByRole('button', { name: 'Validate & Load Files' }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  const ebitda = page.locator('.headline-grid .metric-card').filter({ has: page.locator('.metric-title', { hasText: /^EBITDA$/ }) });
+  await expect(ebitda.locator('.metric-value')).toHaveText('No Data');
+  await expect(page.locator('.focus-metric').filter({ hasText: 'Cash' }).locator('strong')).toHaveText('No Data');
+});

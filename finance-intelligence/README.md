@@ -105,3 +105,7 @@ Python tests cover aggregation, comparisons, tool restrictions, API session isol
 Storage tests exercise real SQLite databases shared across independent store instances, including restart recovery, chat/data isolation, expiry and concurrent-update rejection. They do not connect to Neon or create a cloud account. Vercel deployment must still be verified against the connected PostgreSQL database.
 
 The optional legacy Streamlit UI needs `pip install -r requirements-legacy.txt`; its tests skip when Streamlit is absent. It is retained as a migration reference, while React/FastAPI is the primary application.
+
+### Data Load Templates
+
+Use **Templates** beside **Manage Data** to download a ZIP containing three sample CSV files and instructions. Upload any subset of these files. Each load replaces all workspace datasets, so omitted files are empty. Period and scenario identify each row; finance also requires account and amount headers. Numeric cells may be blank and operations/balance metric columns may be omitted. At least one actual row is required. Missing inputs and dependent metrics display **No Data**, while explicit zeros remain zero. Include all available files together when updating a workspace.
