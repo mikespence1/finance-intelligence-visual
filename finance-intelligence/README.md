@@ -2,7 +2,7 @@
 
 A React dashboard and FastAPI backend for financial performance, sustainable packaging operations and monthly board reporting. Node.js runs the frontend build tools and development server.
 
-The interface uses forest green `#123F36`, secondary green `#2A6B5C`, gold `#C49A45` and cream `#E8DCC4`. It includes responsive sidebar navigation, metric cards with budget/forecast variances, three-line trends, operational reporting, board exports and grounded AI questions.
+The interface uses DataPillars deep navy `#0B1F33`, electric teal `#00A6A6`, coral `#F26B5B`, slate `#667085`, warm white `#F8FAFC` and white `#FFFFFF`. It includes responsive sidebar navigation, metric cards with budget/forecast variances, three-line trends, operational reporting, board exports and grounded AI questions.
 
 ## Start On Windows
 
@@ -77,7 +77,7 @@ The editable prompt is [prompts/data_agent.md](prompts/data_agent.md). The agent
 | Location | Responsibility |
 | --- | --- |
 | `frontend/src/main.jsx` | React pages, state, uploads, charts, AI UI and downloads |
-| `frontend/src/styles.css` | Responsive green/gold/cream design system |
+| `frontend/src/styles.css` | Responsive DataPillars brand design system |
 | `frontend/vite.config.js` | Node.js/Vite development proxy and production build |
 | `scripts/dev.mjs` | Starts the frontend and Python backend together |
 | `backend/main.py` | FastAPI validation, per-browser datasets, API and exports |

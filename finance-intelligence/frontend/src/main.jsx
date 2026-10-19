@@ -82,14 +82,14 @@ function Trend({ data, metric, selection }) {
   return <div className="trend-wrap" role="img" aria-label={`${data.labels[metric] || metric} actual versus ${selection.baseline === 'both' ? 'budget and forecast' : selection.baseline} trend`}>
     <ResponsiveContainer width="100%" height={330}>
       <LineChart data={points} margin={{ top: 15, right: 20, bottom: 15, left: 10 }}>
-        <CartesianGrid stroke="#e4e9e2" vertical={false}/>
-        <XAxis dataKey="index" type="number" domain={points.length === 1 ? [-.25, .25] : [0, points.length - 1]} ticks={ticks} tickFormatter={short} tick={{ fontSize: 11, fill: '#6c7d72' }} tickLine={false} axisLine={false} dy={10}/>
-        <YAxis width={65} tickFormatter={v => new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(v)} tick={{ fontSize: 11, fill: '#6c7d72' }} tickLine={false} axisLine={false}/>
-        <Tooltip labelFormatter={i => data.periods.find(p => p.value === labels[i])?.title || labels[i]} formatter={value => number(value, metric, selection.currency)} contentStyle={{ borderRadius: 12, border: '1px solid #dedfce', boxShadow: '0 8px 25px #123f3615' }}/>
+        <CartesianGrid stroke="#E2E8F0" vertical={false}/>
+        <XAxis dataKey="index" type="number" domain={points.length === 1 ? [-.25, .25] : [0, points.length - 1]} ticks={ticks} tickFormatter={short} tick={{ fontSize: 11, fill: '#667085' }} tickLine={false} axisLine={false} dy={10}/>
+        <YAxis width={65} tickFormatter={v => new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(v)} tick={{ fontSize: 11, fill: '#667085' }} tickLine={false} axisLine={false}/>
+        <Tooltip labelFormatter={i => data.periods.find(p => p.value === labels[i])?.title || labels[i]} formatter={value => number(value, metric, selection.currency)} contentStyle={{ borderRadius: 12, border: '1px solid #E2E8F0', boxShadow: '0 8px 25px #0b1f3315' }}/>
         <Legend iconType="plainline" wrapperStyle={{ fontSize: 12, paddingTop: 18 }}/>
-        <ReferenceLine x={labels.indexOf(data.period)} stroke="#C49A45" strokeDasharray="3 6"/>
-        {comparisons(selection.baseline).map(s => <Line key={s} dataKey={s} name={title(s)} stroke={s === 'budget' ? '#8a9d93' : '#C49A45'} strokeDasharray={s === 'budget' ? '7 5' : '2 5'} strokeWidth={2.5} dot={{ r: 3 }} connectNulls={false} isAnimationActive={false}/>)}
-        <Line dataKey="actual" name="Actual" stroke="#2A6B5C" strokeWidth={3.5} dot={{ r: 3.5, fill: '#2A6B5C', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} connectNulls={false} isAnimationActive={false}/>
+        <ReferenceLine x={labels.indexOf(data.period)} stroke="#F26B5B" strokeDasharray="3 6"/>
+        {comparisons(selection.baseline).map(s => <Line key={s} dataKey={s} name={title(s)} stroke={s === 'budget' ? '#667085' : '#F26B5B'} strokeDasharray={s === 'budget' ? '7 5' : '2 5'} strokeWidth={2.5} dot={{ r: 3 }} connectNulls={false} isAnimationActive={false}/>)}
+        <Line dataKey="actual" name="Actual" stroke="#00A6A6" strokeWidth={3.5} dot={{ r: 3.5, fill: '#00A6A6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} connectNulls={false} isAnimationActive={false}/>
       </LineChart>
     </ResponsiveContainer>
   </div>;

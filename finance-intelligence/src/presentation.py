@@ -4,8 +4,8 @@ import re
 import pandas as pd
 import plotly.graph_objects as go
 
-NAVY = '#142D4E'
-TEAL = '#008A87'
+NAVY = '#0B1F33'
+TEAL = '#00A6A6'
 METRIC_LABELS = {
     'production_tonnes': 'Good production', 'scrap_tonnes': 'Material wastage',
     'waste_cost': 'Material wastage cost', 'orders_shipped': 'Orders shipped',
@@ -87,7 +87,7 @@ def performance_chart(kpis, metric, grain, selected, currency, baseline='budget'
     tick_positions = sorted(set(positions[::stride] + positions[-1:]))
     if baseline not in ['budget', 'forecast', 'both']:
         raise ValueError('Choose budget, forecast or both')
-    series = [('budget', 'Budget', '#8A9CB2', 'dash'), ('forecast', 'Forecast', '#C98231', 'dot')]
+    series = [('budget', 'Budget', '#667085', 'dash'), ('forecast', 'Forecast', '#F26B5B', 'dot')]
     series = [item for item in series if baseline == 'both' or item[0] == baseline]
     series.append(('actual', 'Actual', TEAL, 'solid'))
     for scenario, title, color, dash in series:

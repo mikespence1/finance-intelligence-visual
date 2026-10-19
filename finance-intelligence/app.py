@@ -18,14 +18,14 @@ st.set_page_config(page_title='Finance Intelligence', page_icon='📊', layout='
 st.markdown('''<style>
 .block-container {padding-top: 6rem; max-width: 1480px;}
 @media (max-width: 640px) {.block-container {padding-top: 5rem;}}
-h1, h2, h3 {color: #142D4E; letter-spacing: -.025em;}
+h1, h2, h3 {color: #0B1F33; letter-spacing: -.025em;}
 [class*="st-key-raised-card-"] {
     background: linear-gradient(145deg, #FFFFFF 0%, #EDF3F8 100%);
     border: 1px solid #DAE4EF; border-radius: 16px;
     box-shadow: 0 8px 20px rgba(20,45,78,.10), 0 2px 4px rgba(20,45,78,.05), inset 0 1px 0 #FFFFFF;
     padding: 1rem;
 }
-[data-testid="stMetricValue"] {color: #142D4E; font-weight: 700;}
+[data-testid="stMetricValue"] {color: #0B1F33; font-weight: 700;}
 [data-testid="stMetricLabel"] {color: #52677F;}
 [data-testid="stSidebar"] {border-right: 1px solid #DFE7F0;}
 [data-testid="stSidebar"] .st-key-reporting_page [role="radiogroup"] {gap: .5rem;}
@@ -35,9 +35,9 @@ h1, h2, h3 {color: #142D4E; letter-spacing: -.025em;}
     border: 1px solid #D7E2EC; font-weight: 600;
 }
 [data-testid="stSidebar"] .st-key-reporting_page label:has(input:checked) {
-    background: #D7EEEC; border-color: #008A87; box-shadow: 0 2px 6px rgba(20,45,78,.1);
+    background: #D7EEEC; border-color: #00A6A6; box-shadow: 0 2px 6px rgba(20,45,78,.1);
 }
-.eyebrow {color: #008A87; font-size: .8rem; font-weight: 700;
+.eyebrow {color: #00A6A6; font-size: .8rem; font-weight: 700;
     letter-spacing: .12em; line-height: 1.6; padding: .35rem 0; margin-bottom: .4rem;}
 [data-baseweb="tab-list"] {gap: 1.2rem;}
 </style>''', unsafe_allow_html=True)
@@ -215,7 +215,7 @@ if page == 'Sustainability & Operations':
         actuals = kpis[kpis.scenario == 'actual'].copy()
         actuals['Reporting period'] = actuals.label.map(lambda label: period_label(label, grain))
         fig = px.line(actuals, x='Reporting period', y=['Scrap Rate %', 'EBITDA Margin %'],
-                      markers=True, color_discrete_sequence=['#142D4E', '#008A87'],
+                      markers=True, color_discrete_sequence=['#0B1F33', '#00A6A6'],
                       labels={'value': 'Percent (%)', 'variable': 'Metric'})
         fig.update_layout(template='plotly_white', legend=dict(orientation='h', y=1.15),
                           paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
