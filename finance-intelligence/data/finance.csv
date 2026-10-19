@@ -1,0 +1,145 @@
+period,scenario,account,amount
+2026-01-01,budget,Revenue,3395000.0
+2026-01-01,budget,Cost of Sales,2240700.0
+2026-01-01,budget,Operating Expenses,544500.0
+2026-01-01,budget,Depreciation,95000.0
+2026-01-01,budget,Interest,32000.0
+2026-01-01,budget,Tax,53000.0
+2026-01-01,actual,Revenue,3437437.5
+2026-01-01,actual,Cost of Sales,2313395.44
+2026-01-01,actual,Operating Expenses,544500.0
+2026-01-01,actual,Depreciation,95000.0
+2026-01-01,actual,Interest,32000.0
+2026-01-01,actual,Tax,53000.0
+2026-02-01,budget,Revenue,3490000.0
+2026-02-01,budget,Cost of Sales,2303400.0
+2026-02-01,budget,Operating Expenses,549000.0
+2026-02-01,budget,Depreciation,95000.0
+2026-02-01,budget,Interest,32000.0
+2026-02-01,budget,Tax,53000.0
+2026-02-01,actual,Revenue,3620875.0
+2026-02-01,actual,Cost of Sales,2436848.88
+2026-02-01,actual,Operating Expenses,549000.0
+2026-02-01,actual,Depreciation,95000.0
+2026-02-01,actual,Interest,32000.0
+2026-02-01,actual,Tax,53000.0
+2026-03-01,budget,Revenue,3585000.0
+2026-03-01,budget,Cost of Sales,2366100.0
+2026-03-01,budget,Operating Expenses,553500.0
+2026-03-01,budget,Depreciation,95000.0
+2026-03-01,budget,Interest,32000.0
+2026-03-01,budget,Tax,53000.0
+2026-03-01,actual,Revenue,3809062.5
+2026-03-01,actual,Cost of Sales,2563499.06
+2026-03-01,actual,Operating Expenses,553500.0
+2026-03-01,actual,Depreciation,95000.0
+2026-03-01,actual,Interest,32000.0
+2026-03-01,actual,Tax,53000.0
+2026-04-01,budget,Revenue,3680000.0
+2026-04-01,budget,Cost of Sales,2428800.0
+2026-04-01,budget,Operating Expenses,558000.0
+2026-04-01,budget,Depreciation,95000.0
+2026-04-01,budget,Interest,32000.0
+2026-04-01,budget,Tax,53000.0
+2026-04-01,actual,Revenue,3634000.0
+2026-04-01,actual,Cost of Sales,2445682.0
+2026-04-01,actual,Operating Expenses,558000.0
+2026-04-01,actual,Depreciation,95000.0
+2026-04-01,actual,Interest,32000.0
+2026-04-01,actual,Tax,53000.0
+2026-05-01,budget,Revenue,3775000.0
+2026-05-01,budget,Cost of Sales,2491500.0
+2026-05-01,budget,Operating Expenses,562500.0
+2026-05-01,budget,Depreciation,95000.0
+2026-05-01,budget,Interest,32000.0
+2026-05-01,budget,Tax,53000.0
+2026-05-01,actual,Revenue,3822187.5
+2026-05-01,actual,Cost of Sales,2572332.19
+2026-05-01,actual,Operating Expenses,562500.0
+2026-05-01,actual,Depreciation,95000.0
+2026-05-01,actual,Interest,32000.0
+2026-05-01,actual,Tax,53000.0
+2026-06-01,budget,Revenue,3870000.0
+2026-06-01,budget,Cost of Sales,2554200.0
+2026-06-01,budget,Operating Expenses,567000.0
+2026-06-01,budget,Depreciation,95000.0
+2026-06-01,budget,Interest,32000.0
+2026-06-01,budget,Tax,53000.0
+2026-06-01,actual,Revenue,4015125.0
+2026-06-01,actual,Cost of Sales,2702179.12
+2026-06-01,actual,Operating Expenses,567000.0
+2026-06-01,actual,Depreciation,95000.0
+2026-06-01,actual,Interest,32000.0
+2026-06-01,actual,Tax,53000.0
+2026-07-01,budget,Revenue,3965000.0
+2026-07-01,budget,Cost of Sales,2616900.0
+2026-07-01,budget,Operating Expenses,571500.0
+2026-07-01,budget,Depreciation,95000.0
+2026-07-01,budget,Interest,32000.0
+2026-07-01,budget,Tax,53000.0
+2026-07-01,actual,Revenue,4212812.5
+2026-07-01,actual,Cost of Sales,2835222.81
+2026-07-01,actual,Operating Expenses,571500.0
+2026-07-01,actual,Depreciation,95000.0
+2026-07-01,actual,Interest,32000.0
+2026-07-01,actual,Tax,53000.0
+2026-08-01,budget,Revenue,4060000.0
+2026-08-01,budget,Cost of Sales,2679600.0
+2026-08-01,budget,Operating Expenses,576000.0
+2026-08-01,budget,Depreciation,95000.0
+2026-08-01,budget,Interest,32000.0
+2026-08-01,budget,Tax,53000.0
+2026-08-01,actual,Revenue,4009250.0
+2026-08-01,actual,Cost of Sales,2698225.25
+2026-08-01,actual,Operating Expenses,576000.0
+2026-08-01,actual,Depreciation,95000.0
+2026-08-01,actual,Interest,32000.0
+2026-08-01,actual,Tax,53000.0
+2026-09-01,budget,Revenue,4155000.0
+2026-09-01,budget,Cost of Sales,2742300.0
+2026-09-01,budget,Operating Expenses,580500.0
+2026-09-01,budget,Depreciation,95000.0
+2026-09-01,budget,Interest,32000.0
+2026-09-01,budget,Tax,53000.0
+2026-09-01,actual,Revenue,4206937.5
+2026-09-01,actual,Cost of Sales,2831268.94
+2026-09-01,actual,Operating Expenses,580500.0
+2026-09-01,actual,Depreciation,95000.0
+2026-09-01,actual,Interest,32000.0
+2026-09-01,actual,Tax,53000.0
+2026-10-01,budget,Revenue,4250000.0
+2026-10-01,budget,Cost of Sales,2805000.0
+2026-10-01,budget,Operating Expenses,585000.0
+2026-10-01,budget,Depreciation,95000.0
+2026-10-01,budget,Interest,32000.0
+2026-10-01,budget,Tax,53000.0
+2026-10-01,actual,Revenue,4409375.0
+2026-10-01,actual,Cost of Sales,2967509.37
+2026-10-01,actual,Operating Expenses,585000.0
+2026-10-01,actual,Depreciation,95000.0
+2026-10-01,actual,Interest,32000.0
+2026-10-01,actual,Tax,53000.0
+2026-11-01,budget,Revenue,4345000.0
+2026-11-01,budget,Cost of Sales,2867700.0
+2026-11-01,budget,Operating Expenses,589500.0
+2026-11-01,budget,Depreciation,95000.0
+2026-11-01,budget,Interest,32000.0
+2026-11-01,budget,Tax,53000.0
+2026-11-01,actual,Revenue,4616562.5
+2026-11-01,actual,Cost of Sales,3106946.56
+2026-11-01,actual,Operating Expenses,589500.0
+2026-11-01,actual,Depreciation,95000.0
+2026-11-01,actual,Interest,32000.0
+2026-11-01,actual,Tax,53000.0
+2026-12-01,budget,Revenue,4440000.0
+2026-12-01,budget,Cost of Sales,2930400.0
+2026-12-01,budget,Operating Expenses,594000.0
+2026-12-01,budget,Depreciation,95000.0
+2026-12-01,budget,Interest,32000.0
+2026-12-01,budget,Tax,53000.0
+2026-12-01,actual,Revenue,4384500.0
+2026-12-01,actual,Cost of Sales,2950768.5
+2026-12-01,actual,Operating Expenses,594000.0
+2026-12-01,actual,Depreciation,95000.0
+2026-12-01,actual,Interest,32000.0
+2026-12-01,actual,Tax,53000.0
