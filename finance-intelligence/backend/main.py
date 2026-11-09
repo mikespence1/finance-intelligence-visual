@@ -24,7 +24,7 @@ from src.operations_agent import ask_operations
 from src.financial_agent import ask_financial
 from src.query_agent import ask_data
 from src.executive_agent import ask_executive, DEFINITIONS as EXECUTIVE_DEFINITIONS
-from backend.executive import dashboard as executive_dashboard, source as executive_source
+from backend.executive import dashboard as executive_dashboard, source as executive_source, trend_window
 from backend.storage import get_store, WorkspaceConflict, WorkspaceTooLarge
 from src.workbook import style_workbook
 
@@ -372,12 +372,24 @@ class ExecutiveQuestion(BaseModel):
 
 
 def executive_chat_context(date=None, category='', location='', period='mtd', start_date=None):
-    data = executive_dashboard(date, category, location, period, start_date)
-    sales, _ = executive_source()
-    return {'currency':'AED', 'data_source':data['source'], 'dataset':'Executive ERP',
-        'analysis_start':data['analysis_start'], 'analysis_end':data['analysis_end'],
-        'as_of':data['as_of'], 'category':category, 'location':location, 'baseline':'both',
-        'dataset_revision':sales.attrs['revision']}
+    # Chat history needs dates and scope, not a full recalculation of every dashboard chart.
+    try: sales,_=executive_source()
+    except (ValueError,KeyError,FileNotFoundError) as error:
+        raise HTTPException(422,f'Executive extract validation: {error}') from None
+    minimum=sales.posting_date.min();maximum=sales.posting_date.max()
+    try:
+        end=pd.Timestamp(date) if date else maximum
+        custom=pd.Timestamp(start_date) if start_date else None
+    except ValueError:raise HTTPException(422,'Invalid reporting date') from None
+    if pd.isna(end) or end<minimum or end>maximum:raise HTTPException(422,'As-of date must be inside actual data coverage')
+    if period=='custom' and (custom is None or pd.isna(custom) or custom<minimum or custom>end):
+        raise HTTPException(422,'Custom start date must be within coverage and before the as-of date')
+    for name,value in [('category',category),('location',location)]:
+        if value and value not in set(sales[name]):raise HTTPException(422,f'Unknown {name}')
+    start,end=trend_window(end,period,custom)
+    return {'currency':'AED','data_source':'Dynamics extract' if os.environ.get('EXECUTIVE_DATA_DIR') else 'Synthetic ERP sample',
+        'dataset':'Executive ERP','analysis_start':str(start.date()),'analysis_end':str(end.date()),
+        'as_of':str(end.date()),'category':category,'location':location,'baseline':'both','dataset_revision':sales.attrs['revision']}
 
 
 def executive_history(state, context):

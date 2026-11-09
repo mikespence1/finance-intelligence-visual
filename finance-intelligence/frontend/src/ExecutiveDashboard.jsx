@@ -1,9 +1,12 @@
 import React, {useEffect, useState} from 'react';
+import {createPortal} from 'react-dom';
+import MetricSparkline from './MetricSparkline';
 import ExecutiveChat from './ExecutiveChat';
 import MetricInfo from './MetricInfo';
 import {RankingVisual, PeriodTrend, PlanBars, MonthlyBars} from './ExecutiveCharts';
 import {ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend} from 'recharts';
 const money = value => value == null ? 'Unavailable' : `AED ${new Intl.NumberFormat('en', {maximumFractionDigits: 0}).format(value)}`;
+const heroMoney=value=>value==null?'Unavailable':`AED ${new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:1}).format(value)}`;
 const percent = value => value == null ? 'Unavailable' : `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
 const metrics = {net_revenue: 'Revenue', gross_profit: 'Gross profit', gross_margin: 'Gross margin %'};
 function ranked(rows, key, descending = true) {
@@ -13,7 +16,7 @@ function ranked(rows, key, descending = true) {
 function RankSelect({label, value, onChange}) {
   return <label>{label}<select aria-label={label} value={value} onChange={e => onChange(e.target.value)}>{Object.entries(metrics).map(([key, name]) => <option key={key} value={key}>{name}</option>)}</select></label>;
 }
-export default function ExecutiveDashboard() {
+export default function ExecutiveDashboard({onSummary}) {
   const [filters, setFilters] = useState({date: '', category: '', location: '', period: 'mtd', start_date: ''});
   const [data, setData] = useState(null), [error, setError] = useState(''), [loading, setLoading] = useState(true), [reload, setReload] = useState(0);
   const [comparison,setComparison] = useState('all');
@@ -43,6 +46,7 @@ export default function ExecutiveDashboard() {
       .finally(() => {clearTimeout(timer); if (!controller.signal.aborted || timedOut) setLoading(false);});
     return () => {clearTimeout(timer); controller.abort();};
   }, [filters, reload]);
+  useEffect(()=>{if(data)onSummary?.({label:({day:'Selected day',mtd:'Month to date',qtd:'Quarter to date',ytd:'Year to date',custom:'Custom range'})[filters.period],start:data.analysis_start,end:data.analysis_end});},[data,onSummary]);
   const change = (key, value) => setFilters(previous => ({...previous, [key]: value, ...(key === 'period' && value === 'custom' && !previous.start_date ? {start_date: (previous.date || data.as_of).slice(0, 7) + '-01'} : {})}));
   if (!data) return <section className="panel" aria-busy={loading}>
     <h2>{error ? 'Executive Dashboard could not load' : 'Loading executive data...'}</h2>
@@ -53,30 +57,29 @@ export default function ExecutiveDashboard() {
   const salesLabel=({day:'Daily sales',mtd:'Month-to-date sales',qtd:'Quarter-to-date sales',ytd:'Year-to-date sales',custom:'Selected-period sales'})[filters.period];
   const periodLabel = `${data.analysis_start} to ${data.analysis_end}`;
   return <div className="executive-dashboard" aria-busy={loading}>
-    <section className="panel executive-controls" aria-label="Executive filters">
-      <div className="executive-section-heading"><div><h2>Your reporting view</h2><p>Select a date and market. The analysis period filters all sales metrics, plans, rankings and charts below.</p></div><span className="source-pill">{data.source} - AED</span></div>
+    {document.getElementById('reporting-sidebar-filters') && createPortal(<section className="sidebar-reporting-filters executive-controls" aria-label="Executive filters">
+      <h2>Reporting filters</h2>
       <div className="executive-filter-grid">
         <label>As-of date<input type="date" min={data.min_date} max={data.max_date} value={filters.date || data.as_of} onChange={e => change('date', e.target.value)}/></label>
         <label>Analysis period<select aria-label="Analysis period" value={filters.period} onChange={e => change('period', e.target.value)}>{[['day','Selected day'],['mtd','Month to date'],['qtd','Quarter to date'],['ytd','Year to date'],['custom','Custom date range']].map(([key, name]) => <option key={key} value={key}>{name}</option>)}</select></label>
         {filters.period === 'custom' && <label>From date<input type="date" min={data.min_date} max={filters.date || data.as_of} value={filters.start_date} onChange={e => change('start_date', e.target.value)}/></label>}
         {['category','location'].map(key => <label key={key}>{key === 'category' ? 'Material category' : 'Location'}<select aria-label={key === 'category' ? 'Material category' : 'Location'} value={filters[key]} onChange={e => change(key, e.target.value)}><option value="">All {key === 'category' ? 'categories' : 'locations'}</option>{data.options[key === 'category' ? 'categories' : 'locations'].map(value => <option key={value}>{value}</option>)}</select></label>)}
       </div>
-      <p className="footnote" role="status">{loading ? 'Updating results...' : `Analysis: ${periodLabel}.`} All visuals use this date range, category and location.</p>
-    </section>
+      <small role="status">{loading?'Updating...':`${periodLabel} - AED`}</small>
+    </section>,document.getElementById('reporting-sidebar-filters'))}
     {error && <p className="alert error" role="alert">{error} Showing the last successfully loaded results.</p>}
+      <div className="headline-grid">{[[salesLabel,heroMoney(data.analysis_revenue),periodLabel],['Gross profit',heroMoney(data.analysis_profit),'Revenue less cost of goods sold'],['Gross margin',data.analysis_margin==null?'Unavailable':`${data.analysis_margin.toFixed(1)}%`,'Gross profit divided by selected-period revenue'],['Sales change vs last year',percent(data.analysis_yoy_pct),`Matching period last year: ${money(data.analysis_prior_revenue)}`]].map(([label, value, note]) => <article className="metric-card headline hero-metric" key={label}><div className="metric-title"><MetricInfo metric={label}>{label}</MetricInfo></div><div className="metric-value">{value}</div>{label!=='Sales change vs last year' && <MetricSparkline label={label} points={data.history.filter(row=>row.month<=data.analysis_end.slice(0,7)).slice(-12).map(row=>({label:row.month,value:label==='Gross profit'?row.gross_profit:label==='Gross margin'?(row.net_revenue?row.gross_profit/row.net_revenue*100:null):row.net_revenue}))} formatValue={value=>label==='Gross margin'?`${value.toFixed(1)}%`:money(value)}/>}{label==='Sales change vs last year' && <div className="metric-mini-comparison" aria-label="Selected-period sales against the matching period last year">{[['Selected period',data.analysis_revenue],['Last year',data.analysis_prior_revenue]].map(([name,value])=><div key={name} title={`${name}: ${money(value)}`}><span>{name}</span><i style={{width:value==null?'0%':`${Math.abs(value)/Math.max(Math.abs(data.analysis_revenue||0),Math.abs(data.analysis_prior_revenue||0),1)*100}%`}}/></div>)}</div>}<p className="footnote">{label==='Sales change vs last year'?note:''}</p></article>)}</div>
     <nav className="executive-sections" aria-label="Executive dashboard sections">{[['overview','Sales overview'],['customers','Customer performance'],['skus','Product performance'],['trends','Trends & comparisons']].map(([key, name]) => <button type="button" key={key} aria-pressed={section === key} onClick={() => setSection(key)}>{name}</button>)}</nav>
-    <div className="executive-section-heading"><div><h2>{section === 'overview' ? 'Sales overview' : section === 'customers' ? 'Customer performance' : section === 'skus' ? 'Product performance' : 'Trends & comparisons'}</h2><p>{section === 'overview' ? `As of ${data.as_of}` : `Analysis period: ${periodLabel}`}</p></div></div>
     <div className="dashboard-with-assistant"><div className="dashboard-metrics">
     {section === 'overview' && <>
-      <div className="headline-grid">{[[salesLabel,money(data.analysis_revenue),periodLabel],['Gross profit',money(data.analysis_profit),'Revenue less cost of goods sold'],['Gross margin',data.analysis_margin==null?'Unavailable':`${data.analysis_margin.toFixed(1)}%`,'Gross profit divided by selected-period revenue'],['Sales change vs last year',percent(data.analysis_yoy_pct),`Matching period last year: ${money(data.analysis_prior_revenue)}`]].map(([label, value, note]) => <article className="metric-card" key={label}><div className="metric-title"><MetricInfo metric={label}>{label}</MetricInfo></div><div className="metric-value">{value}</div><p className="footnote">{note}</p></article>)}</div>
-      <section className="panel executive-plan-panel"><h3>Revenue against plan - selected period</h3><p>{periodLabel} - actual sales: <strong>{money(data.analysis_revenue)}</strong>. Plans cover the same dates.</p>
+      <section className="panel executive-plan-panel"><h3>Revenue against plan - selected period</h3><p className="chart-period-caption">{periodLabel} - AED</p>
         <div className="plan-chart-and-controls"><div className="compact-plan-chart"><PlanBars actual={data.analysis_revenue} budget={data.analysis_budget} forecast={data.analysis_forecast}/></div>
           <nav className="period-shortcuts" aria-label="Sales period and comparison shortcuts"><strong>Analysis period</strong><div>{[['day','Day'],['mtd','MTD'],['qtd','QTD'],['ytd','YTD']].map(([key,label])=><button key={key} type="button" aria-pressed={filters.period===key} onClick={()=>change('period',key)}><MetricInfo metric={key==='day'?'Daily revenue':label}>{label}</MetricInfo></button>)}</div>
             <strong>Compare matching cutoff</strong><div>{[['last_month','Last month'],['last_quarter','Last quarter'],['last_year','Last year'],['all','All comparisons']].map(([key,label])=><button key={key} type="button" aria-pressed={comparison===key} onClick={()=>setComparison(key)}>{label}</button>)}</div></nav>
         </div><div className="executive-plan-grid">{[['Budget',data.analysis_budget,data.analysis_budget_variance,data.analysis_budget_pct],['Forecast',data.analysis_forecast,data.analysis_forecast_variance,data.analysis_forecast_pct]].map(([name,amount,variance,relative])=><article key={name}><h4>{name}</h4><strong>{money(amount)}</strong><p>{money(variance)} variance ({percent(relative)})</p></article>)}</div>
         <PeriodTrend comparison={comparison} filters={filters} title="Selected sales period - progress"/>
       </section>
-      <section className="panel"><div className="executive-section-heading"><div><h3>Revenue breakdown</h3><p>{periodLabel} - change the analysis period above to explore daily or longer-term sales.</p></div><label>Group by<select value={breakdown} onChange={e => setBreakdown(e.target.value)}>{['customer','category','sku','location'].map(value => <option key={value}>{value}</option>)}</select></label></div><RankingVisual comparison={comparison} orientation={['customer','sku'].includes(breakdown)?'horizontal':'vertical'} filters={filters} title={`Revenue by ${breakdown}`} dimension={breakdown} rows={ranked(data.breakdowns[breakdown], 'net_revenue').slice(0,10)}/></section>
+      <section className="panel"><div className="executive-section-heading"><div><h3>Revenue breakdown</h3></div><label>Group by<select value={breakdown} onChange={e => setBreakdown(e.target.value)}>{['customer','category','sku','location'].map(value => <option key={value}>{value}</option>)}</select></label></div><RankingVisual comparison={comparison} orientation={['customer','sku'].includes(breakdown)?'horizontal':'vertical'} filters={filters} title={`Revenue by ${breakdown}`} dimension={breakdown} rows={ranked(data.breakdowns[breakdown], 'net_revenue').slice(0,10)}/></section>
     </>}
     {section === 'customers' && <>
       <section className="panel"><div className="executive-filter-grid"><RankSelect label="Rank customers by" value={customerRank} onChange={setCustomerRank}/><label>Customers in each list<select aria-label="Customers in each list" value={count} onChange={e => setCount(Number(e.target.value))}>{[5,10,20].map(value => <option key={value} value={value}>{value}</option>)}</select></label><label>Find a customer<input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Customer name"/></label></div><p className="footnote">Filter by day, month, quarter, year or custom range, material category and location above. Rankings use {metrics[customerRank].toLowerCase()}; margin rankings require positive net revenue.</p></section>

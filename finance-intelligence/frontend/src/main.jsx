@@ -8,6 +8,8 @@ import ExecutiveDashboard from './ExecutiveDashboard';
 import FinancialChat from './FinancialChat';
 import OperationsOverview from './OperationsOverview';
 import MetricInfo from './MetricInfo';
+import ReportingFilters from './ReportingFilters';
+import MetricSparkline from './MetricSparkline';
 
 const PAGES = [
   ['Executive Dashboard', ChartIcon, 'Executive'],
@@ -61,9 +63,10 @@ function MetricCard({ metric, data, selection, headline = false }) {
   const row = data.comparison.find(item => item.Metric === metric);
   if (!row) return null;
   const inversed = data.lower_better.includes(metric);
-  return <article className={`metric-card ${headline ? 'headline' : ''}`}>
+  return <article className={`metric-card ${headline ? 'headline hero-metric' : ''}`}>
     <div className="metric-title"><MetricInfo metric={metric}>{data.labels[metric] || metric}</MetricInfo>{headline && <ArrowUpRight size={16} aria-hidden="true"/>}</div>
     <div className="metric-value" title={number(row.Actual, metric, selection.currency)}>{unit(metric, selection.currency) === selection.currency && row.Actual != null ? <><small>{selection.currency}</small><span>{number(row.Actual, metric, selection.currency, true).slice(selection.currency.length+1)}</span></> : number(row.Actual, metric, selection.currency, true)}</div>
+    {headline && <MetricSparkline label={data.labels[metric]||metric} points={data.history.filter(row=>row.scenario==='actual'&&row.label<=data.period).slice(-12).map(row=>({label:row.label,value:row[metric]}))} formatValue={value=>number(value,metric,selection.currency)}/>}
     <div className="metric-comparisons">{comparisons(selection.baseline).map(target => {
       const change = variance(row, target, selection), favorable = change.delta == null ? null : inversed ? change.delta <= 0 : change.delta >= 0;
       return <div key={target}><span><i className={target}/>{title(target)} <b>{number(row[title(target)], metric, selection.currency, true)}</b></span>
@@ -75,7 +78,7 @@ function MetricCard({ metric, data, selection, headline = false }) {
 function Trend({ data, metric, selection }) {
   const labels = [...new Set(data.history.map(row => row.label))].sort();
   const points = labels.map((label, index) => ({ index, label, ...Object.fromEntries(['actual', 'budget', 'forecast'].map(scenario =>
-    [scenario, data.history.find(row => row.label === label && row.scenario === scenario)?.[metric] ?? null])) }));
+    [scenario, scenario==='actual'&&label>data.period?null:data.history.find(row => row.label === label && row.scenario === scenario)?.[metric] ?? null])) }));
   const short = index => {
     const label = labels[Math.round(index)];
     if (!label) return '';
@@ -105,6 +108,7 @@ function ComparisonTable({ data, selection, rows = data.comparison }) {
 }
 
 function App() {
+  const [executiveSummary,setExecutiveSummary]=useState(null);
   const [page, setPage] = useState('Financial Performance'), [selection, setSelection] = useState(initial);
   const [data, setData] = useState(null), [error, setError] = useState(''), [loading, setLoading] = useState(true), [reload, setReload] = useState(0);
   const [metric, setMetric] = useState('Revenue'), [operationsMetric, setOperationsMetric] = useState('scrap_tonnes');
@@ -114,7 +118,15 @@ function App() {
   const reportKey = JSON.stringify([data?.version, effective]);
   useEffect(() => {
     const controller = new AbortController(); setLoading(true); setError('');
-    api(`/dashboard?${params(selection)}`, { signal: controller.signal }).then(setData)
+    api(`/dashboard?${params(selection)}`, { signal: controller.signal }).then(async result=>{
+      if (!selection.period && selection.grain==='Month') {
+        const parts=Object.fromEntries(new Intl.DateTimeFormat('en',{timeZone:'Asia/Dubai',year:'numeric',month:'2-digit'}).formatToParts(new Date()).map(part=>[part.type,part.value]));
+        const month=`${parts.year}-${parts.month}`;
+        const preferred=result.periods.filter(period=>period.value<=month).at(-1);
+        if (preferred && preferred.value!==result.period) return api(`/dashboard?${params({...selection,period:preferred.value})}`,{signal:controller.signal});
+      }
+      return result;
+    }).then(setData)
       .catch(e => { if (e.name !== 'AbortError') setError(e.message); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [selection, reload]);
@@ -157,6 +169,7 @@ function App() {
     <aside className={`sidebar ${navOpen ? 'open' : ''}`}>
       <a className="brand" href="#" onClick={e => { e.preventDefault(); setPage('Financial Performance'); }}><span className="brand-mark"><Leaf size={25}/></span><span>Packaging<span className="brand-light">Intelligence</span></span></a>
       <div className="workspace-label">REPORTING WORKSPACE</div><div className="workspace"><span className="workspace-monogram">SP</span><div>Sustainable Packaging<small>Management Workspace</small></div><ShieldCheck size={16}/></div>
+      <div id="reporting-sidebar-filters">{page !== 'Executive Dashboard' && <ReportingFilters data={data} selection={selection} busy={busy} loading={loading} onChange={change}/>}</div>
       <p className="nav-label">Reporting & Analysis</p>
       <nav aria-label="Reporting & Analysis">{PAGES.map(([name, Icon]) => <button key={name} className={page === name ? 'active' : ''} aria-current={page === name ? 'page' : undefined} onClick={() => { setPage(name); setNavOpen(false); }}><Icon size={19}/><span>{name}</span><ChevronRight size={15}/></button>)}</nav>
 
@@ -164,31 +177,24 @@ function App() {
     </aside>
     <div className="workspace-main">
       <header className="topbar"><div className="breadcrumb"><button className="icon-button mobile-toggle" aria-label="Open navigation" onClick={() => setNavOpen(true)}><PanelLeftOpen size={22}/></button><span>Workspace</span><ChevronRight size={14}/><strong>{page}</strong></div><div className="top-actions"><span className="source-pill"><span className="status-dot"/>{page === 'Executive Dashboard' ? 'Executive ERP extracts' : data?.source || 'Connecting'}</span><a className="button secondary template-download" href="/api/datasets/templates" download="data_load_templates.zip"><ArrowDownToLine size={16}/>Templates</a><button className="button secondary" onClick={() => setUploadOpen(true)} disabled={busy || loading}><Upload size={16}/>Manage Data</button><span className="avatar" title="Management Workspace">SP</span></div></header>
-      <main>
-        <div className="page-heading"><div><p className="eyebrow">FINANCE INTELLIGENCE / MANAGEMENT REPORTING</p><h1>{page}</h1><p className="page-description">{page === 'Executive Dashboard' ? 'Sales, customer profitability and product performance from ERP source data.' : page === 'Financial Performance' ? 'The numbers that matter. A clearer view of what comes next.' : page === 'Sustainability & Operations' ? 'Track your materials, customer experience and operational resilience.' : page === 'Board Pack' ? 'From performance data to a board-ready conversation.' : page === 'AI Report' ? 'Turn calculated results into a focused management briefing.' : 'A conversation with your company performance data.'}</p></div></div>
-        {page !== 'Executive Dashboard' && <section className="filter-bar" aria-label="Reporting filters">
-          <label>Reporting View<select aria-label="Reporting View" value={selection.grain} disabled={busy} onChange={e => change('grain', e.target.value)}>{['Month', 'Quarter', 'Year'].map(g => <option key={g}>{g}</option>)}</select></label>
-          <label>Reporting Period<select aria-label="Reporting Period" value={data?.period || ''} disabled={busy || loading} onChange={e => change('period', e.target.value)}>{data?.periods.map(p => <option key={p.value} value={p.value}>{p.title}</option>)}</select></label>
-          <label>Compare Actuals Against<select aria-label="Compare Actuals Against" value={selection.baseline} disabled={busy} onChange={e => change('baseline', e.target.value)}><option value="both">Budget & Forecast</option><option value="budget">Budget</option><option value="forecast">Forecast</option></select></label>
-          <label>Currency<select aria-label="Currency" value={selection.currency} disabled={busy} onChange={e => change('currency', e.target.value)}>{['AED', 'USD', 'GBP', 'EUR', 'SAR'].map(c => <option key={c}>{c}</option>)}</select></label>
-          <div className="filter-note"><span className="status-dot"/>Calculated From Source Data<small>Currency label only  -  No FX conversion</small></div>
-        </section>}
-        {page === 'Executive Dashboard' && <ExecutiveDashboard/>}
+      <main className={['Executive Dashboard','Financial Performance','Sustainability & Operations'].includes(page)?'visual-dashboard':''}>
+        <div className="page-heading"><div><p className="eyebrow">FINANCE INTELLIGENCE / MANAGEMENT REPORTING</p><h1>{page}</h1><div className="report-period-badge">{page === 'Executive Dashboard' ? executiveSummary?.label||'Month to date' : `${data?.period_title||'Loading'} - ${selection.grain==='Month'?'Monthly source':selection.grain} totals`}</div><p className="page-description">{page === 'Executive Dashboard' ? 'Sales, customer profitability and product performance from ERP source data.' : page === 'Financial Performance' ? 'The numbers that matter. A clearer view of what comes next.' : page === 'Sustainability & Operations' ? 'Track your materials, customer experience and operational resilience.' : page === 'Board Pack' ? 'From performance data to a board-ready conversation.' : page === 'AI Report' ? 'Turn calculated results into a focused management briefing.' : 'A conversation with your company performance data.'}</p></div></div>
+        {page === 'Executive Dashboard' && <ExecutiveDashboard onSummary={setExecutiveSummary}/>}
         {page !== 'Executive Dashboard' && error && <div className="alert error" role="alert"><CircleHelp size={18}/><span>{error}</span><button className="icon-button" aria-label="Dismiss error" onClick={() => setError('')}><X size={18}/></button></div>}
         {page === 'Executive Dashboard' ? null : loading ? <div className="loading-state" role="status"><LoaderCircle className="spin" size={30}/>Preparing Your Reporting Workspace...</div> : !data ? <div className="empty-state"><h2>Let's Reconnect Your Workspace</h2><button className="button primary" onClick={() => setReload(n => n + 1)}><RefreshCw size={16}/>Try Again</button></div> : <>
-          <div className="period-line" hidden={page === 'Executive Dashboard'}><span><b>{data.period_title}</b><span className="divider">/</span>Actual Results Against {selection.baseline === 'both' ? 'Budget & Forecast' : title(selection.baseline)}</span>{!['Financial Performance', 'Sustainability & Operations'].includes(page) && <span>{coverage.map(c => `${c.dataset}: ${c.months}/${c.expected}`).join('  -  ')} Months</span>}</div>
+          <div className="period-line" hidden={['Executive Dashboard','Financial Performance','Sustainability & Operations'].includes(page)}><span><b>{data.period_title}</b><span className="divider">/</span>Actual Results Against {selection.baseline === 'both' ? 'Budget & Forecast' : title(selection.baseline)}</span>{!['Financial Performance', 'Sustainability & Operations'].includes(page) && <span>{coverage.map(c => `${c.dataset}: ${c.months}/${c.expected}`).join('  -  ')} Months</span>}</div>
           {page !== 'Executive Dashboard' && (coverage.some(c => c.months < c.expected) || missing.length > 0) && <div className="alert"><CircleHelp size={18}/><span>Partial Data Coverage. Missing values stay unavailable. Flows reflect available months; day ratios use the full calendar period.</span></div>}
           {!['Financial Performance','Sustainability & Operations'].includes(page) && <section className="headline-grid">{['Revenue', 'Gross Profit', 'EBITDA', 'EBITDA Margin %'].map(m => <MetricCard key={m} metric={m} data={data} selection={selection} headline/>)}</section>}
-          {page === 'Financial Performance' && <div className="dashboard-with-assistant"><div className="dashboard-metrics"><section className="headline-grid">{['Revenue', 'Gross Profit', 'EBITDA', 'EBITDA Margin %'].map(m => <MetricCard key={m} metric={m} data={data} selection={selection} headline/>)}</section>
+          {page === 'Financial Performance' && <><section className="headline-grid">{['Revenue', 'Gross Profit', 'EBITDA', 'EBITDA Margin %'].map(m => <MetricCard key={m} metric={m} data={data} selection={selection} headline/>)}</section><div className="dashboard-with-assistant"><div className="dashboard-metrics">
             <div className="analysis-grid financial-analysis-grid"><section className="panel chart-panel"><div className="panel-heading"><div><p className="eyebrow">THE BIGGER PICTURE</p><h2>Performance Against Plan</h2></div><label className="sr-only" htmlFor="financial-metric">Financial Metric</label><select id="financial-metric" value={metric} onChange={e => setMetric(e.target.value)}>{data.groups['Financial performance'].map(m => <option key={m}>{m}</option>)}</select></div><div className="chart-unit">{unit(metric, selection.currency)}  -  {selection.grain}ly Performance</div><Trend data={data} metric={metric} selection={selection}/><div className="chart-summary"><span>Selected Period <b>{data.period_title}</b></span><span>Actual <b>{number(selectedRow?.Actual, metric, selection.currency, true)}</b></span>{comparisons(selection.baseline).map(s => <span key={s}>{title(s)} <b>{number(selectedRow?.[title(s)], metric, selection.currency, true)}</b></span>)}</div></section>
             <section className="focus-panel cash-panel-classic"><span className="gold-icon"><Wallet size={24}/></span><p className="eyebrow">FINANCIAL RESILIENCE</p><h2>A Closer Look At Cash</h2><p>Closing balances for your selected reporting period.</p>{['Cash', 'Accounts Receivable', 'Material Payables'].map(m => <div className="focus-metric" key={m}><span><MetricInfo metric={m}>{data.labels[m]||m}</MetricInfo></span><strong>{number(rows.find(r => r.Metric === m)?.Actual, m, selection.currency, true)}</strong></div>)}<button onClick={() => setPage('Sustainability & Operations')}>Explore Operations <ArrowRight size={17}/></button></section></div>
             <div className="section-heading"><div><h2>People & Operating Expenses</h2><p>Staff costs sit within operating expenses. Headcount is a closing balance.</p></div><Users size={22}/></div><div className="headline-grid">{['Staff Costs', 'Headcount', 'Operating Expenses', 'Other Operating Expenses'].map(m => <MetricCard key={m} metric={m} data={data} selection={selection}/>)}</div>
-            <section className="panel"><div className="panel-heading"><div><h2>Financial Detail</h2><p>A consistent view of actuals and your planning targets.</p></div><button className="text-button" onClick={() => exportFile('csv')} disabled={busy}><ArrowDownToLine size={16}/>Export CSV</button></div><ComparisonTable data={data} selection={selection} rows={rows.filter(r => data.groups['Financial performance'].includes(r.Metric))}/></section>
-          </div><aside className="data-assistant-panel" aria-label="Financial Data side panel"><FinancialChat selection={effective} version={data.version}/></aside></div>}
-          {page === 'Sustainability & Operations' && <div className="dashboard-with-assistant"><div className="dashboard-metrics"><OperationsOverview data={data} selection={selection}
-            renderCard={m=><MetricCard key={m} metric={m} data={data} selection={selection} headline/>}
+            <details className="panel financial-detail"><summary>Financial detail and plan comparisons</summary><div className="panel-heading"><div><h2>Financial Detail</h2><p>A consistent view of actuals and your planning targets.</p></div><button className="text-button" onClick={() => exportFile('csv')} disabled={busy}><ArrowDownToLine size={16}/>Export CSV</button></div><ComparisonTable data={data} selection={selection} rows={rows.filter(r => data.groups['Financial performance'].includes(r.Metric))}/></details>
+          </div><aside className="data-assistant-panel" aria-label="Financial Data side panel"><FinancialChat selection={effective} version={data.version}/></aside></div></>}
+          {page === 'Sustainability & Operations' && <><section className="headline-grid" aria-label="Operational headline metrics">{['Scrap Rate %','Recycled Input %','Waste Recovery %','Return Rate %'].map(m=><MetricCard key={m} metric={m} data={data} selection={selection} headline/>)}</section><div className="dashboard-with-assistant"><div className="dashboard-metrics"><OperationsOverview showHeadlines={false} data={data} selection={selection}
+            renderCard={m=><MetricCard key={m} metric={m} data={data} selection={selection}/>}
             renderTrend={m=><Trend data={data} metric={m} selection={selection}/>}
-            formatValue={number}/></div><aside className="data-assistant-panel" aria-label="Operations Data side panel"><FinancialChat scope="operations" selection={effective} version={data.version}/></aside></div>}
+            formatValue={number}/></div><aside className="data-assistant-panel" aria-label="Operations Data side panel"><FinancialChat scope="operations" selection={effective} version={data.version}/></aside></div></>}
           {page === 'Board Pack' && <>
             <section className="board-hero"><div><p className="eyebrow">READY FOR THE BOARDROOM</p><h2>Your Performance.<br/>A Clearer Conversation.</h2><p>{data.period_title}  -  Financial results, sustainable operations, customer credit and people in one pack.</p><span><ShieldCheck size={17}/>Generated From The Same Validated KPI Calculations</span></div><FileChartColumn size={120} strokeWidth={.9}/></section>
             <div className="export-grid">{[['pptx', 'Board Presentation', '11 editable slides with key metrics, planning comparisons and trend charts.'], ['xlsx', 'Management Workbook', 'Both planning comparisons and the complete reporting KPI history.'], ['csv', 'Period KPI Data', 'Selected comparison, reporting period and currency. Ready to analyse.']].map(([kind, name, description]) => <article className="panel export-card" key={kind}><span className="file-type">{kind.toUpperCase()}</span><h2>{name}</h2><p>{description}</p><button className="button primary" disabled={busy} onClick={() => exportFile(kind)}><ArrowDownToLine size={17}/>Download {kind.toUpperCase()}</button></article>)}</div>

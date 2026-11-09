@@ -6,12 +6,12 @@ const topics=[
   {key:'stock',title:'Stock & Customer Credit',description:'Manage stock, overdue invoices and credit exposure.',metrics:['Inventory','Raw Material Stock Tonnes','Finished Goods Stock Tonnes','Accounts Receivable','Overdue Receivables','Customer Credit Limit','Customer Credit Headroom','Credit Utilisation %'],focus:'Credit Utilisation %'},
   {key:'liquidity',title:'Cash, Suppliers & People',description:'Track liquidity, supplier commitments and working-capital days.',metrics:['Cash','Material Payables','Overdue Material Payables','Accounts Payable','Headcount','DSO','DIO','DPO','Cash Conversion Cycle'],focus:'Cash Conversion Cycle'},
 ];
-export default function OperationsOverview({data,selection,renderCard,renderTrend,formatValue}) {
+export default function OperationsOverview({data,selection,renderCard,renderTrend,formatValue,showHeadlines=true}) {
   const [active,setActive]=useState('materials'),[focus,setFocus]=useState('Scrap Rate %');
   const topic=topics.find(item=>item.key===active);
   function choose(item){setActive(item.key);setFocus(item.focus);}
   return <div className="operations-overview">
-    <section className="headline-grid" aria-label="Operational headline metrics">{['Scrap Rate %','Recycled Input %','Waste Recovery %','Return Rate %'].map(renderCard)}</section>
+    {showHeadlines && <section className="headline-grid" aria-label="Operational headline metrics">{['Scrap Rate %','Recycled Input %','Waste Recovery %','Return Rate %'].map(renderCard)}</section>}
     <div className="section-heading"><div><h2>Explore your operations</h2><p>Four themes, one focused trend at a time. Choose a theme to see its key measures and expand the full detail when needed.</p></div></div>
     <nav className="operations-topic-nav" aria-label="Operational themes">{topics.map(item=><button key={item.key} type="button" aria-pressed={active===item.key} onClick={()=>choose(item)}><strong>{item.title}</strong><span>{item.metrics.length} measures</span></button>)}</nav>
     <section className="panel operations-topic"><div className="panel-heading"><div><h2>{topic.title}</h2><p>{topic.description}</p></div><label>Trend metric<select aria-label="Operational trend metric" value={focus} onChange={event=>setFocus(event.target.value)}>{topic.metrics.map(metric=><option key={metric} value={metric}>{data.labels[metric]||metric}</option>)}</select></label></div>

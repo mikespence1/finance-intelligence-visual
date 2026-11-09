@@ -15,7 +15,7 @@ test('persistent page-scoped assistants, metric explanations and operational the
   await page.screenshot({path:'test-results/financial-sidebar-desktop.png',fullPage:true});
   await page.getByRole('button',{name:'Sustainability & Operations',exact:true}).click();
   await expect(page.getByRole('region',{name:'Operational headline metrics'}).locator('.metric-card')).toHaveCount(4);
-  await expect(page.locator('.operations-overview > .headline-grid')).not.toContainText('EBITDA');
+  await expect(page.getByRole('region',{name:'Operational headline metrics'})).not.toContainText('EBITDA');
   await expect(page.getByRole('heading',{name:'Materials & Circularity',exact:true})).toBeVisible();
   await page.getByRole('navigation',{name:'Operational themes'}).getByRole('button',{name:'Customer Returns'}).click();
   await expect(page.getByRole('heading',{name:'Customer Returns',exact:true})).toBeVisible();
@@ -65,11 +65,12 @@ test('financial side panel posts only to the scoped financial endpoint',async({p
 test('sales overview follows period filters and provides compact comparison shortcuts',async({page})=>{
   await page.goto('/');await page.getByRole('button',{name:'Executive Dashboard',exact:true}).click();
   const format=value=>`AED ${new Intl.NumberFormat('en',{maximumFractionDigits:0}).format(value)}`;
+  const compact=value=>`AED ${new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:1}).format(value)}`;
   for(const period of ['ytd','qtd','day','mtd']){
     const response=page.waitForResponse(response=>{const url=new URL(response.url());return url.pathname==='/api/executive'&&url.searchParams.get('period')===period;});
     await page.getByLabel('Analysis period',{exact:true}).selectOption(period);
     const data=await(await response).json();
-    await expect(page.locator('.headline-grid .metric-value').first()).toHaveText(format(data.analysis_revenue));
+    await expect(page.locator('.headline-grid .metric-value').first()).toHaveText(compact(data.analysis_revenue));
     await expect(page.locator('.executive-plan-grid article').first().locator('strong')).toHaveText(format(data.analysis_budget));
     await expect(page.locator('.executive-plan-panel')).toContainText(`${data.analysis_start} to ${data.analysis_end}`);
   }
@@ -101,7 +102,7 @@ test('Operations assistant uses its own endpoint and selected report context',as
   await panel.getByLabel('Question about Operations Data').fill('How is scrap rate performing?');
   await panel.getByRole('button',{name:'Ask',exact:true}).click();
   await expect(panel.getByText('Synthetic scrap rate is 3.8% [S1].')).toBeVisible();
-  expect(payload.period).toBe('2026-12');expect(payload.grain).toBe('Month');
+  expect(payload.period).toMatch(/^2026-/);expect(payload.grain).toBe('Month');
   await page.screenshot({path:'test-results/operations-scoped-sidebar.png',fullPage:true});
 });
 

@@ -2,12 +2,12 @@ const { test, expect } = require('@playwright/test');
 test('executive reporting filters and accessible sections', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Executive Dashboard' }).click();
-  await expect(page.getByRole('heading', { name: 'Your reporting view' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Reporting filters', exact: true })).toBeVisible();
   await expect(page.getByLabel('Location', { exact: true }).getByRole('option')).toHaveText(['All locations','Abu Dhabi','Dubai','KSA','Other Emirates']);
   await page.getByRole('button', { name: 'Customer performance', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Bottom 10 customers by gross profit' })).toBeVisible();
   await page.getByLabel('Analysis period', { exact: true }).selectOption('ytd');
-  await expect(page.getByText('Analysis: 2026-01-01 to 2026-11-09.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('status').filter({hasText:'2026-01-01 to 2026-11-09'})).toBeVisible();
   await page.getByLabel('Rank customers by').selectOption('net_revenue');
   await page.getByLabel('Customers in each list').selectOption('5');
   await expect(page.getByRole('heading', { name: 'Bottom 5 customers by revenue' })).toBeVisible();
@@ -32,7 +32,7 @@ test('executive load failure can be retried', async ({ page }) => {
   await expect(page.getByRole('alert')).toContainText('HTTP 500');
   failed = false;
   await page.getByRole('button', {name: 'Retry Executive Dashboard'}).click();
-  await expect(page.getByRole('heading', {name: 'Your reporting view'})).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Reporting filters', exact:true})).toBeVisible();
 });
 
 test('executive incompatible API response shows an actionable error', async ({ page }) => {
