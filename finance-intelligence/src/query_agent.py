@@ -150,11 +150,11 @@ def function_tools():
             for name, description, props in specs]
 
 
-def ask_data(question, finance, operations, balances, context, history=(), client=None):
+def ask_data(question, finance, operations, balances, context, history=(), client=None, data_tools=None, tool_specs=None, definitions_text=None):
     if not question.strip() or len(question) > 4000:
         raise ValueError('Enter a question of up to 4,000 characters')
-    tools = DataTools(finance, operations, balances, context['currency'])
-    definitions = (ROOT / 'DATA_DICTIONARY.md').read_text(encoding='utf-8')
+    tools = data_tools if data_tools is not None else DataTools(finance, operations, balances, context['currency'])
+    definitions = definitions_text if definitions_text is not None else (ROOT / 'DATA_DICTIONARY.md').read_text(encoding='utf-8')
     instructions = (ROOT / 'prompts' / 'data_agent.md').read_text(encoding='utf-8')
     instructions += '\nApplication context: ' + json.dumps(context)
     instructions += '\nCatalog: ' + json.dumps(tools.catalog())
@@ -170,7 +170,7 @@ def ask_data(question, finance, operations, balances, context, history=(), clien
     for _ in range(4):
         response = client.responses.create(
             model=os.environ.get('OPENAI_MODEL', 'gpt-4.1-mini'), store=False,
-            instructions=instructions, input=conversation, tools=function_tools(),
+            instructions=instructions, input=conversation, tools=tool_specs if tool_specs is not None else function_tools(),
             parallel_tool_calls=False, max_output_tokens=1800,
             text={'format': {'type': 'json_schema', 'name': 'data_answer', 'strict': True, 'schema': schema}})
         calls = [item for item in response.output if item.type == 'function_call']

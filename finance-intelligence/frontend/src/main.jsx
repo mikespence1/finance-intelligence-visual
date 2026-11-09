@@ -1,16 +1,20 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AreaChart as ChartIcon, ArrowDownToLine, ArrowRight, ArrowUpRight, Check, ChevronRight, CircleHelp, FileChartColumn, Leaf, LoaderCircle, MessageSquareText, PanelLeftClose, PanelLeftOpen, RefreshCw, Send, ShieldCheck, Sparkles, Sprout, Upload, Users, Wallet, X } from 'lucide-react';
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Markdown from 'react-markdown';
 import './styles.css';
+import ExecutiveDashboard from './ExecutiveDashboard';
+import FinancialChat from './FinancialChat';
+import OperationsOverview from './OperationsOverview';
+import MetricInfo from './MetricInfo';
 
 const PAGES = [
+  ['Executive Dashboard', ChartIcon, 'Executive'],
   ['Financial Performance', ChartIcon, 'Performance'],
   ['Sustainability & Operations', Sprout, 'Operations'],
   ['Board Pack', FileChartColumn, 'Board Pack'],
   ['AI Report', Sparkles, 'AI Report'],
-  ['Ask Your Data', MessageSquareText, 'Ask Your Data'],
 ];
 const initial = { grain: 'Month', baseline: 'both', period: '', currency: 'AED' };
 const comparisons = baseline => baseline === 'both' ? ['budget', 'forecast'] : [baseline];
@@ -58,7 +62,7 @@ function MetricCard({ metric, data, selection, headline = false }) {
   if (!row) return null;
   const inversed = data.lower_better.includes(metric);
   return <article className={`metric-card ${headline ? 'headline' : ''}`}>
-    <div className="metric-title">{data.labels[metric] || metric}{headline && <ArrowUpRight size={16} aria-hidden="true"/>}</div>
+    <div className="metric-title"><MetricInfo metric={metric}>{data.labels[metric] || metric}</MetricInfo>{headline && <ArrowUpRight size={16} aria-hidden="true"/>}</div>
     <div className="metric-value" title={number(row.Actual, metric, selection.currency)}>{unit(metric, selection.currency) === selection.currency && row.Actual != null ? <><small>{selection.currency}</small><span>{number(row.Actual, metric, selection.currency, true).slice(selection.currency.length+1)}</span></> : number(row.Actual, metric, selection.currency, true)}</div>
     <div className="metric-comparisons">{comparisons(selection.baseline).map(target => {
       const change = variance(row, target, selection), favorable = change.delta == null ? null : inversed ? change.delta <= 0 : change.delta >= 0;
@@ -87,8 +91,8 @@ function Trend({ data, metric, selection }) {
         <YAxis width={82} tickFormatter={v => new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(v)} tick={{ fontSize: 15, fill: '#667085' }} tickLine={false} axisLine={false}/>
         <Tooltip labelFormatter={i => data.periods.find(p => p.value === labels[i])?.title || labels[i]} formatter={value => number(value, metric, selection.currency)} contentStyle={{ fontSize: 16, borderRadius: 12, border: '1px solid #E2E8F0', boxShadow: '0 8px 25px #0b1f3315' }}/>
         <Legend iconType="plainline" wrapperStyle={{ fontSize: 16, paddingTop: 18 }}/>
-        <ReferenceLine x={labels.indexOf(data.period)} stroke="#F26B5B" strokeDasharray="3 6"/>
-        {comparisons(selection.baseline).map(s => <Line key={s} dataKey={s} name={title(s)} stroke={s === 'budget' ? '#667085' : '#F26B5B'} strokeDasharray={s === 'budget' ? '7 5' : '2 5'} strokeWidth={2.5} dot={{ r: 3 }} connectNulls={false} isAnimationActive={false}/>)}
+        <ReferenceLine x={labels.indexOf(data.period)} stroke="#0B1F33" strokeDasharray="3 6"/>
+        {comparisons(selection.baseline).map(s => <Line key={s} dataKey={s} name={title(s)} stroke={s === 'budget' ? '#667085' : '#0B1F33'} strokeDasharray={s === 'budget' ? '7 5' : '2 5'} strokeWidth={2.5} dot={{ r: 3 }} connectNulls={false} isAnimationActive={false}/>)}
         <Line dataKey="actual" name="Actual" stroke="#00A6A6" strokeWidth={3.5} dot={{ r: 3.5, fill: '#00A6A6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} connectNulls={false} isAnimationActive={false}/>
       </LineChart>
     </ResponsiveContainer>
@@ -97,7 +101,7 @@ function Trend({ data, metric, selection }) {
 
 function ComparisonTable({ data, selection, rows = data.comparison }) {
   return <div className="table-scroll"><table><thead><tr><th>Performance Metric</th><th>Actual</th>{comparisons(selection.baseline).map(s => <React.Fragment key={s}><th>{title(s)}</th><th>Variance</th></React.Fragment>)}</tr></thead>
-    <tbody>{rows.map(row => <tr key={row.Metric}><th>{data.labels[row.Metric] || row.Metric}</th><td className="actual-cell">{number(row.Actual, row.Metric, selection.currency)}</td>{comparisons(selection.baseline).map(s => <React.Fragment key={s}><td>{number(row[title(s)], row.Metric, selection.currency)}</td><td>{variance(row, s, selection).text}</td></React.Fragment>)}</tr>)}</tbody></table></div>;
+    <tbody>{rows.map(row => <tr key={row.Metric}><th><MetricInfo metric={row.Metric}>{data.labels[row.Metric] || row.Metric}</MetricInfo></th><td className="actual-cell">{number(row.Actual, row.Metric, selection.currency)}</td>{comparisons(selection.baseline).map(s => <React.Fragment key={s}><td>{number(row[title(s)], row.Metric, selection.currency)}</td><td>{variance(row, s, selection).text}</td></React.Fragment>)}</tr>)}</tbody></table></div>;
 }
 
 function App() {
@@ -105,8 +109,7 @@ function App() {
   const [data, setData] = useState(null), [error, setError] = useState(''), [loading, setLoading] = useState(true), [reload, setReload] = useState(0);
   const [metric, setMetric] = useState('Revenue'), [operationsMetric, setOperationsMetric] = useState('scrap_tonnes');
   const [uploadOpen, setUploadOpen] = useState(false), [busy, setBusy] = useState(false), [navOpen, setNavOpen] = useState(false);
-  const [report, setReport] = useState(null), [messages, setMessages] = useState([]), [question, setQuestion] = useState(''), [chatReady, setChatReady] = useState(false);
-  const bottom = useRef(null);
+  const [report, setReport] = useState(null);
   const effective = { ...selection, period: data?.period || selection.period };
   const reportKey = JSON.stringify([data?.version, effective]);
   useEffect(() => {
@@ -115,14 +118,6 @@ function App() {
       .catch(e => { if (e.name !== 'AbortError') setError(e.message); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [selection, reload]);
-  useEffect(() => {
-    if (!data) return;
-    const controller = new AbortController(); setChatReady(false); setMessages([]);
-    api(`/chat?currency=${selection.currency}`, { signal: controller.signal }).then(r => { setMessages(r.messages); setChatReady(true); })
-      .catch(e => { if (e.name !== 'AbortError') { setError(e.message); setChatReady(true); } });
-    return () => controller.abort();
-  }, [data?.version, selection.currency]);
-  useEffect(() => { bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, busy]);
   function change(key, value) { setSelection(previous => ({ ...previous, [key]: value, ...(key === 'grain' ? { period: '' } : {}) })); }
   async function exportFile(kind) {
     setBusy(true); setError('');
@@ -153,14 +148,6 @@ function App() {
     try { const result = await api('/commentary', post(effective)); setReport({ key, ...result }); }
     catch (e) { setError(e.message); } finally { setBusy(false); }
   }
-  async function sendQuestion(event, text = question) {
-    event.preventDefault(); if (!text.trim() || busy || !chatReady) return;
-    setBusy(true); setError(''); const previous = messages; setMessages([...previous, { role: 'user', content: text }]); setQuestion('');
-    try { const reply = await api('/chat', post({ ...effective, question: text }));
-      setMessages([...previous, { role: 'user', content: text }, { role: 'assistant', content: reply.answer, reply }]);
-    } catch (e) { setMessages(previous); setQuestion(text); setError(e.message); } finally { setBusy(false); }
-  }
-  async function clearChat() { setBusy(true); try { await api('/chat', { method: 'DELETE' }); setMessages([]); } catch (e) { setError(e.message); } finally { setBusy(false); } }
   const rows = data?.comparison || [];
   const selectedRow = rows.find(row => row.Metric === metric);
   const coverage = data?.coverage.filter(row => row.scenario === 'actual') || [];
@@ -172,57 +159,50 @@ function App() {
       <div className="workspace-label">REPORTING WORKSPACE</div><div className="workspace"><span className="workspace-monogram">SP</span><div>Sustainable Packaging<small>Management Workspace</small></div><ShieldCheck size={16}/></div>
       <p className="nav-label">Reporting & Analysis</p>
       <nav aria-label="Reporting & Analysis">{PAGES.map(([name, Icon]) => <button key={name} className={page === name ? 'active' : ''} aria-current={page === name ? 'page' : undefined} onClick={() => { setPage(name); setNavOpen(false); }}><Icon size={19}/><span>{name}</span><ChevronRight size={15}/></button>)}</nav>
-      <div className="sidebar-note"><Sprout size={22}/><h3>Better Decisions.<br/>Lighter Footprint.</h3><p>Your financial and operational performance, connected.</p></div>
+
       <div className="sidebar-footer"><span className="status-dot"/>Local Workspace<span>v2.0</span></div>
     </aside>
     <div className="workspace-main">
-      <header className="topbar"><div className="breadcrumb"><button className="icon-button mobile-toggle" aria-label="Open navigation" onClick={() => setNavOpen(true)}><PanelLeftOpen size={22}/></button><span>Workspace</span><ChevronRight size={14}/><strong>{page}</strong></div><div className="top-actions"><span className="source-pill"><span className="status-dot"/>{data?.source || 'Connecting'}</span><a className="button secondary template-download" href="/api/datasets/templates" download="data_load_templates.zip"><ArrowDownToLine size={16}/>Templates</a><button className="button secondary" onClick={() => setUploadOpen(true)} disabled={busy || loading}><Upload size={16}/>Manage Data</button><span className="avatar" title="Management Workspace">SP</span></div></header>
+      <header className="topbar"><div className="breadcrumb"><button className="icon-button mobile-toggle" aria-label="Open navigation" onClick={() => setNavOpen(true)}><PanelLeftOpen size={22}/></button><span>Workspace</span><ChevronRight size={14}/><strong>{page}</strong></div><div className="top-actions"><span className="source-pill"><span className="status-dot"/>{page === 'Executive Dashboard' ? 'Executive ERP extracts' : data?.source || 'Connecting'}</span><a className="button secondary template-download" href="/api/datasets/templates" download="data_load_templates.zip"><ArrowDownToLine size={16}/>Templates</a><button className="button secondary" onClick={() => setUploadOpen(true)} disabled={busy || loading}><Upload size={16}/>Manage Data</button><span className="avatar" title="Management Workspace">SP</span></div></header>
       <main>
-        <div className="page-heading"><div><p className="eyebrow">FINANCE INTELLIGENCE / MANAGEMENT REPORTING</p><h1>{page}</h1><p className="page-description">{page === 'Financial Performance' ? 'The numbers that matter. A clearer view of what comes next.' : page === 'Sustainability & Operations' ? 'Track your materials, customer experience and operational resilience.' : page === 'Board Pack' ? 'From performance data to a board-ready conversation.' : page === 'AI Report' ? 'Turn calculated results into a focused management briefing.' : 'A conversation with your company’s performance data.'}</p></div><div className="heading-seal"><Sprout size={22}/><span>Built For<br/><b>Sustainable Growth</b></span></div></div>
-        <section className="filter-bar" aria-label="Reporting filters">
+        <div className="page-heading"><div><p className="eyebrow">FINANCE INTELLIGENCE / MANAGEMENT REPORTING</p><h1>{page}</h1><p className="page-description">{page === 'Executive Dashboard' ? 'Sales, customer profitability and product performance from ERP source data.' : page === 'Financial Performance' ? 'The numbers that matter. A clearer view of what comes next.' : page === 'Sustainability & Operations' ? 'Track your materials, customer experience and operational resilience.' : page === 'Board Pack' ? 'From performance data to a board-ready conversation.' : page === 'AI Report' ? 'Turn calculated results into a focused management briefing.' : 'A conversation with your company performance data.'}</p></div></div>
+        {page !== 'Executive Dashboard' && <section className="filter-bar" aria-label="Reporting filters">
           <label>Reporting View<select aria-label="Reporting View" value={selection.grain} disabled={busy} onChange={e => change('grain', e.target.value)}>{['Month', 'Quarter', 'Year'].map(g => <option key={g}>{g}</option>)}</select></label>
           <label>Reporting Period<select aria-label="Reporting Period" value={data?.period || ''} disabled={busy || loading} onChange={e => change('period', e.target.value)}>{data?.periods.map(p => <option key={p.value} value={p.value}>{p.title}</option>)}</select></label>
           <label>Compare Actuals Against<select aria-label="Compare Actuals Against" value={selection.baseline} disabled={busy} onChange={e => change('baseline', e.target.value)}><option value="both">Budget & Forecast</option><option value="budget">Budget</option><option value="forecast">Forecast</option></select></label>
           <label>Currency<select aria-label="Currency" value={selection.currency} disabled={busy} onChange={e => change('currency', e.target.value)}>{['AED', 'USD', 'GBP', 'EUR', 'SAR'].map(c => <option key={c}>{c}</option>)}</select></label>
-          <div className="filter-note"><span className="status-dot"/>Calculated From Source Data<small>Currency label only · No FX conversion</small></div>
-        </section>
-        {error && <div className="alert error" role="alert"><CircleHelp size={18}/><span>{error}</span><button className="icon-button" aria-label="Dismiss error" onClick={() => setError('')}><X size={18}/></button></div>}
-        {loading ? <div className="loading-state" role="status"><LoaderCircle className="spin" size={30}/>Preparing Your Reporting Workspace…</div> : !data ? <div className="empty-state"><h2>Let’s Reconnect Your Workspace</h2><button className="button primary" onClick={() => setReload(n => n + 1)}><RefreshCw size={16}/>Try Again</button></div> : <>
-          <div className="period-line"><span><b>{data.period_title}</b><span className="divider">/</span>Actual Results Against {selection.baseline === 'both' ? 'Budget & Forecast' : title(selection.baseline)}</span><span>{coverage.map(c => `${c.dataset}: ${c.months}/${c.expected}`).join(' · ')} Months</span></div>
-          {(coverage.some(c => c.months < c.expected) || missing.length > 0) && <div className="alert"><CircleHelp size={18}/><span>Partial Data Coverage. Missing values stay unavailable. Flows reflect available months; day ratios use the full calendar period.</span></div>}
-          <section className="headline-grid">{['Revenue', 'Gross Profit', 'EBITDA', 'EBITDA Margin %'].map(m => <MetricCard key={m} metric={m} data={data} selection={selection} headline/>)}</section>
-          {page === 'Financial Performance' && <>
-            <div className="analysis-grid"><section className="panel chart-panel"><div className="panel-heading"><div><p className="eyebrow">THE BIGGER PICTURE</p><h2>Performance Against Plan</h2></div><label className="sr-only" htmlFor="financial-metric">Financial Metric</label><select id="financial-metric" value={metric} onChange={e => setMetric(e.target.value)}>{data.groups['Financial performance'].map(m => <option key={m}>{m}</option>)}</select></div><div className="chart-unit">{unit(metric, selection.currency)} · {selection.grain}ly Performance</div><Trend data={data} metric={metric} selection={selection}/><div className="chart-summary"><span>Selected Period <b>{data.period_title}</b></span><span>Actual <b>{number(selectedRow?.Actual, metric, selection.currency, true)}</b></span>{comparisons(selection.baseline).map(s => <span key={s}>{title(s)} <b>{number(selectedRow?.[title(s)], metric, selection.currency, true)}</b></span>)}</div></section>
-            <section className="focus-panel"><span className="gold-icon"><Wallet size={24}/></span><p className="eyebrow">FINANCIAL RESILIENCE</p><h2>A Closer Look At Cash</h2><p>Closing balances for your selected reporting period.</p>{['Cash', 'Accounts Receivable', 'Material Payables'].map(m => <div className="focus-metric" key={m}><span>{data.labels[m]}</span><strong>{number(rows.find(r => r.Metric === m)?.Actual, m, selection.currency, true)}</strong></div>)}<button onClick={() => setPage('Sustainability & Operations')}>Explore Operations <ArrowRight size={17}/></button></section></div>
+          <div className="filter-note"><span className="status-dot"/>Calculated From Source Data<small>Currency label only  -  No FX conversion</small></div>
+        </section>}
+        {page === 'Executive Dashboard' && <ExecutiveDashboard/>}
+        {page !== 'Executive Dashboard' && error && <div className="alert error" role="alert"><CircleHelp size={18}/><span>{error}</span><button className="icon-button" aria-label="Dismiss error" onClick={() => setError('')}><X size={18}/></button></div>}
+        {page === 'Executive Dashboard' ? null : loading ? <div className="loading-state" role="status"><LoaderCircle className="spin" size={30}/>Preparing Your Reporting Workspace...</div> : !data ? <div className="empty-state"><h2>Let's Reconnect Your Workspace</h2><button className="button primary" onClick={() => setReload(n => n + 1)}><RefreshCw size={16}/>Try Again</button></div> : <>
+          <div className="period-line" hidden={page === 'Executive Dashboard'}><span><b>{data.period_title}</b><span className="divider">/</span>Actual Results Against {selection.baseline === 'both' ? 'Budget & Forecast' : title(selection.baseline)}</span>{!['Financial Performance', 'Sustainability & Operations'].includes(page) && <span>{coverage.map(c => `${c.dataset}: ${c.months}/${c.expected}`).join('  -  ')} Months</span>}</div>
+          {page !== 'Executive Dashboard' && (coverage.some(c => c.months < c.expected) || missing.length > 0) && <div className="alert"><CircleHelp size={18}/><span>Partial Data Coverage. Missing values stay unavailable. Flows reflect available months; day ratios use the full calendar period.</span></div>}
+          {!['Financial Performance','Sustainability & Operations'].includes(page) && <section className="headline-grid">{['Revenue', 'Gross Profit', 'EBITDA', 'EBITDA Margin %'].map(m => <MetricCard key={m} metric={m} data={data} selection={selection} headline/>)}</section>}
+          {page === 'Financial Performance' && <div className="dashboard-with-assistant"><div className="dashboard-metrics"><section className="headline-grid">{['Revenue', 'Gross Profit', 'EBITDA', 'EBITDA Margin %'].map(m => <MetricCard key={m} metric={m} data={data} selection={selection} headline/>)}</section>
+            <div className="analysis-grid financial-analysis-grid"><section className="panel chart-panel"><div className="panel-heading"><div><p className="eyebrow">THE BIGGER PICTURE</p><h2>Performance Against Plan</h2></div><label className="sr-only" htmlFor="financial-metric">Financial Metric</label><select id="financial-metric" value={metric} onChange={e => setMetric(e.target.value)}>{data.groups['Financial performance'].map(m => <option key={m}>{m}</option>)}</select></div><div className="chart-unit">{unit(metric, selection.currency)}  -  {selection.grain}ly Performance</div><Trend data={data} metric={metric} selection={selection}/><div className="chart-summary"><span>Selected Period <b>{data.period_title}</b></span><span>Actual <b>{number(selectedRow?.Actual, metric, selection.currency, true)}</b></span>{comparisons(selection.baseline).map(s => <span key={s}>{title(s)} <b>{number(selectedRow?.[title(s)], metric, selection.currency, true)}</b></span>)}</div></section>
+            <section className="focus-panel cash-panel-classic"><span className="gold-icon"><Wallet size={24}/></span><p className="eyebrow">FINANCIAL RESILIENCE</p><h2>A Closer Look At Cash</h2><p>Closing balances for your selected reporting period.</p>{['Cash', 'Accounts Receivable', 'Material Payables'].map(m => <div className="focus-metric" key={m}><span><MetricInfo metric={m}>{data.labels[m]||m}</MetricInfo></span><strong>{number(rows.find(r => r.Metric === m)?.Actual, m, selection.currency, true)}</strong></div>)}<button onClick={() => setPage('Sustainability & Operations')}>Explore Operations <ArrowRight size={17}/></button></section></div>
             <div className="section-heading"><div><h2>People & Operating Expenses</h2><p>Staff costs sit within operating expenses. Headcount is a closing balance.</p></div><Users size={22}/></div><div className="headline-grid">{['Staff Costs', 'Headcount', 'Operating Expenses', 'Other Operating Expenses'].map(m => <MetricCard key={m} metric={m} data={data} selection={selection}/>)}</div>
             <section className="panel"><div className="panel-heading"><div><h2>Financial Detail</h2><p>A consistent view of actuals and your planning targets.</p></div><button className="text-button" onClick={() => exportFile('csv')} disabled={busy}><ArrowDownToLine size={16}/>Export CSV</button></div><ComparisonTable data={data} selection={selection} rows={rows.filter(r => data.groups['Financial performance'].includes(r.Metric))}/></section>
-          </>}
-          {page === 'Sustainability & Operations' && <>
-            <section className="panel"><div className="panel-heading"><div><p className="eyebrow">RESOURCE INTELLIGENCE</p><h2>Operational Performance</h2></div><label className="sr-only" htmlFor="operations-metric">Operational Metric</label><select id="operations-metric" value={operationsMetric} onChange={e => setOperationsMetric(e.target.value)}>{Object.values(data.groups).slice(1).flat().map(m => <option key={m} value={m}>{data.labels[m]}</option>)}</select></div><Trend data={data} metric={operationsMetric} selection={selection}/></section>
-            {Object.entries(data.groups).slice(1).map(([name, metrics]) => <section key={name}><div className="section-heading"><div><h2>{title(name)}</h2><p>{name.includes('Materials') ? 'Material use, recovery and the cost of wastage.' : name.includes('returns') ? 'Returns recorded in-period may relate to earlier shipments.' : name.includes('credit') ? 'Closing stock and customer exposure. Aggregate headroom can hide individual breaches.' : 'Closing liquidity, supplier obligations and people.'}</p></div></div><div className="operations-grid">{metrics.map(m => <MetricCard key={m} metric={m} data={data} selection={selection}/>)}</div></section>)}
-            <p className="footnote">Wastage cost and returned order value are analytical measures; they are not deducted again from profit. Recycled input and recovery figures are supplied data, not sustainability certifications.</p>
-          </>}
+          </div><aside className="data-assistant-panel" aria-label="Financial Data side panel"><FinancialChat selection={effective} version={data.version}/></aside></div>}
+          {page === 'Sustainability & Operations' && <div className="dashboard-with-assistant"><div className="dashboard-metrics"><OperationsOverview data={data} selection={selection}
+            renderCard={m=><MetricCard key={m} metric={m} data={data} selection={selection} headline/>}
+            renderTrend={m=><Trend data={data} metric={m} selection={selection}/>}
+            formatValue={number}/></div><aside className="data-assistant-panel" aria-label="Operations Data side panel"><FinancialChat scope="operations" selection={effective} version={data.version}/></aside></div>}
           {page === 'Board Pack' && <>
-            <section className="board-hero"><div><p className="eyebrow">READY FOR THE BOARDROOM</p><h2>Your Performance.<br/>A Clearer Conversation.</h2><p>{data.period_title} · Financial results, sustainable operations, customer credit and people in one pack.</p><span><ShieldCheck size={17}/>Generated From The Same Validated KPI Calculations</span></div><FileChartColumn size={120} strokeWidth={.9}/></section>
+            <section className="board-hero"><div><p className="eyebrow">READY FOR THE BOARDROOM</p><h2>Your Performance.<br/>A Clearer Conversation.</h2><p>{data.period_title}  -  Financial results, sustainable operations, customer credit and people in one pack.</p><span><ShieldCheck size={17}/>Generated From The Same Validated KPI Calculations</span></div><FileChartColumn size={120} strokeWidth={.9}/></section>
             <div className="export-grid">{[['pptx', 'Board Presentation', '11 editable slides with key metrics, planning comparisons and trend charts.'], ['xlsx', 'Management Workbook', 'Both planning comparisons and the complete reporting KPI history.'], ['csv', 'Period KPI Data', 'Selected comparison, reporting period and currency. Ready to analyse.']].map(([kind, name, description]) => <article className="panel export-card" key={kind}><span className="file-type">{kind.toUpperCase()}</span><h2>{name}</h2><p>{description}</p><button className="button primary" disabled={busy} onClick={() => exportFile(kind)}><ArrowDownToLine size={17}/>Download {kind.toUpperCase()}</button></article>)}</div>
             <section className="panel"><div className="panel-heading"><div><h2>Board KPI Preview</h2><p>Margin and rate differences are percentage points. Other variances are relative percentages.</p></div></div><ComparisonTable data={data} selection={selection}/></section>
           </>}
           {page === 'AI Report' && <>
             <section className="ai-banner"><span className="gold-icon"><Sparkles size={26}/></span><div><p className="eyebrow">YOUR MANAGEMENT BRIEFING</p><h2>From Numbers To Perspective</h2><p>Generate a grounded briefing for {data.period_title}. The selected KPI comparison is sent to OpenAI; review the narrative before sharing.</p></div><button className="button primary" disabled={busy} onClick={generateReport}>{busy ? <LoaderCircle className="spin" size={17}/> : <Sparkles size={17}/>}Generate Briefing</button></section>
-            {report?.key === reportKey ? <><div className="report-grid">{report.sections.map((section, i) => <article className="panel narrative-card" key={i}><span className="section-number">0{i+1}</span><p className="eyebrow">{data.period_title}</p><h2>{section.title}</h2><Markdown>{section.body}</Markdown></article>)}</div><button className="button secondary" onClick={() => downloadBlob(new Blob([report.text], { type: 'text/markdown' }), `commentary_${data.period}.md`)}><ArrowDownToLine size={17}/>Download Commentary</button></> : <div className="empty-state"><Sparkles size={35}/><h2>Your Next Board Briefing Starts Here</h2><p>Executive summary · Performance vs plan · Risks & questions · Proposed actions</p></div>}
+            {report?.key === reportKey ? <><div className="report-grid">{report.sections.map((section, i) => <article className="panel narrative-card" key={i}><span className="section-number">0{i+1}</span><p className="eyebrow">{data.period_title}</p><h2>{section.title}</h2><Markdown>{section.body}</Markdown></article>)}</div><button className="button secondary" onClick={() => downloadBlob(new Blob([report.text], { type: 'text/markdown' }), `commentary_${data.period}.md`)}><ArrowDownToLine size={17}/>Download Commentary</button></> : <div className="empty-state"><Sparkles size={35}/><h2>Your Next Board Briefing Starts Here</h2><p>Executive summary  -  Performance vs plan  -  Risks & questions  -  Proposed actions</p></div>}
           </>}
-          {page === 'Ask Your Data' && <section className="panel chat-panel" aria-label="Ask Your Data Conversation">
-            <div className="chat-messages" aria-live="polite">{messages.map((m, i) => <article key={i} className={`chat-message ${m.role}`}><div className="message-avatar">{m.role === 'assistant' ? <Sparkles size={17}/> : 'You'}</div><div className="message-body"><strong>{m.role === 'assistant' ? 'Performance Analyst' : 'You'}</strong><Markdown>{m.content}</Markdown>{m.reply?.limitation && <p className="footnote">{m.reply.limitation}</p>}{m.reply?.source_ids?.length > 0 && <div className="source-refs">Sources: {m.reply.source_ids.join(', ')}</div>}{m.reply?.evidence?.length > 0 && <details><summary>Supporting Data & Calculations</summary><Evidence rows={m.reply.evidence}/></details>}{m.reply?.source_ids?.includes('D1') && <Definitions/>}</div></article>)}{busy && <div className="chat-thinking"><LoaderCircle className="spin" size={18}/>Checking Your Data…</div>}<div ref={bottom}/></div>
-            <form className="chat-input" onSubmit={sendQuestion}><label className="sr-only" htmlFor="question">Your Question</label><input id="question" maxLength={4000} value={question} onChange={e => setQuestion(e.target.value)} placeholder="Ask a question about your performance…" disabled={busy || !chatReady}/><button className="button primary" aria-label="Send question" disabled={busy || !chatReady || !question.trim()}><Send size={19}/></button></form>
-            <div className="chat-welcome"><h2>Example Questions</h2><p>Ask about financials, materials, returns, stock, customer credit or people. Questions outside the available data will be identified.</p><div className="suggestions">{['How did EBITDA compare with budget in Q1 2026?', 'How did wastage change between Q1 and Q2?', 'What were overdue material payments in December 2026?'].map(q => <button key={q} disabled={busy || !chatReady} onClick={event => sendQuestion(event, q)}>{q}<ArrowUpRight size={17}/></button>)}</div></div>
-            <div className="chat-tools"><div className="chat-context"><ShieldCheck size={16}/>Default: {data.period_title} · {selection.baseline === 'both' ? 'Budget & Forecast' : title(selection.baseline)} · {selection.currency} · Aggregate Data Only</div><button className="button secondary" disabled={busy || !chatReady} onClick={clearChat}><RefreshCw size={15}/>Clear Chat</button></div>
-            <p className="footnote">Relevant results and requested source records are sent to OpenAI when you submit a question.</p>
-          </section>}
-          <footer className="page-footer"><span><Leaf size={14}/>Sustainable Packaging Intelligence</span><span>Calendar Fiscal Year · Single Entity · {selection.currency} · {data.source}</span></footer>
+          <footer className="page-footer"><span><Leaf size={14}/>Sustainable Packaging Intelligence</span><span>Calendar Fiscal Year  -  Single Entity  -  {selection.currency}  -  {data.source}</span></footer>
         </>}
       </main>
     </div>
-    {uploadOpen && <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget && !busy) setUploadOpen(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="upload-title"><div className="panel-heading"><div><p className="eyebrow">YOUR REPORTING WORKSPACE</p><h2 id="upload-title">Manage Source Data</h2></div><button className="icon-button" aria-label="Close data dialog" disabled={busy} onClick={() => setUploadOpen(false)}><X/></button></div><p>Upload any one or more files. Each load replaces the current datasets. Omitted files and blank numeric fields display No Data; enter 0 only for a reported zero. Include at least one actual row. Download Templates above for sample CSV files and instructions.</p><form onSubmit={upload}>{[['finance', 'Financial Accounts'], ['operations', 'Operations & Materials'], ['balances', 'Closing Balances & Headcount']].map(([name, label]) => <label className="file-input" key={name}>{label}<input type="file" name={name} accept=".csv,.xlsx" disabled={busy}/></label>)}<p className="footnote">CSV or XLSX · Maximum 1 MB and 100,000 rows per file. Your files and chat are saved privately for this browser workspace and expire after two hours of inactivity.</p><button className="button primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={17}/> : <Upload size={17}/>}Validate & Load Files</button></form><div className="modal-divider">OR EXPLORE THE APPLICATION</div><button className="button secondary" disabled={busy} onClick={switchSample}><Sprout size={17}/>Load Seasonal Sample Data</button>{error && <p role="alert" className="negative">{error}</p>}</section></div>}
+    {uploadOpen && <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget && !busy) setUploadOpen(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="upload-title"><div className="panel-heading"><div><p className="eyebrow">YOUR REPORTING WORKSPACE</p><h2 id="upload-title">Manage Source Data</h2></div><button className="icon-button" aria-label="Close data dialog" disabled={busy} onClick={() => setUploadOpen(false)}><X/></button></div><p>Upload any one or more files. Each load replaces the current datasets. Omitted files and blank numeric fields display No Data; enter 0 only for a reported zero. Include at least one actual row. Download Templates above for sample CSV files and instructions.</p><form onSubmit={upload}>{[['finance', 'Financial Accounts'], ['operations', 'Operations & Materials'], ['balances', 'Closing Balances & Headcount']].map(([name, label]) => <label className="file-input" key={name}>{label}<input type="file" name={name} accept=".csv,.xlsx" disabled={busy}/></label>)}<p className="footnote">CSV or XLSX  -  Maximum 1 MB and 100,000 rows per file. Your files and chat are saved privately for this browser workspace and expire after two hours of inactivity.</p><button className="button primary" disabled={busy}>{busy ? <LoaderCircle className="spin" size={17}/> : <Upload size={17}/>}Validate & Load Files</button></form><div className="modal-divider">OR EXPLORE THE APPLICATION</div><button className="button secondary" disabled={busy} onClick={switchSample}><Sprout size={17}/>Load Seasonal Sample Data</button>{error && <p role="alert" className="negative">{error}</p>}</section></div>}
   </div>;
 }
 
@@ -232,7 +212,7 @@ function Evidence({ rows }) {
 }
 function Definitions() {
   const [text, setText] = useState('');
-  return <details onToggle={e => { if (e.currentTarget.open && !text) api('/definitions').then(r => setText(r.text)).catch(() => setText('Definitions could not be loaded.')); }}><summary>Metric Definitions · D1</summary><Markdown>{text}</Markdown></details>;
+  return <details onToggle={e => { if (e.currentTarget.open && !text) api('/definitions').then(r => setText(r.text)).catch(() => setText('Definitions could not be loaded.')); }}><summary>Metric Definitions  -  D1</summary><Markdown>{text}</Markdown></details>;
 }
 
 createRoot(document.getElementById('root')).render(<App/>);

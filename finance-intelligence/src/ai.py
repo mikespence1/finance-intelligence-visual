@@ -4,6 +4,10 @@ import os
 from pathlib import Path
 import tomllib
 
+class AIConfigurationError(RuntimeError):
+    pass
+
+
 def openai_client():
     from openai import OpenAI
     api_key = os.environ.get('OPENAI_API_KEY')
@@ -12,8 +16,9 @@ def openai_client():
         if secrets_file.is_file():
             with secrets_file.open('rb') as handle:
                 api_key = tomllib.load(handle).get('OPENAI_API_KEY')
+    api_key=api_key.strip() if isinstance(api_key,str) else None
     if not api_key:
-        raise RuntimeError('OPENAI_API_KEY is not configured. Set an environment variable or .streamlit/secrets.toml.')
+        raise AIConfigurationError('OPENAI_API_KEY is not configured. Set an environment variable or .streamlit/secrets.toml.')
     return OpenAI(api_key=api_key, timeout=45, max_retries=1)
 
 

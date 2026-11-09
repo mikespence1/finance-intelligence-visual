@@ -54,7 +54,7 @@ Keys stay server-side. Do not add them to React source, `VITE_` variables, sourc
 
 Use the sidebar to open **Financial Performance**, **Sustainability & Operations**, **Board Pack**, **AI Report** or **Ask Your Data**. The shared filters select a month/quarter/year, reporting period, currency label and actual-versus-budget/forecast mode. Budget & Forecast is the default and shows both planning comparisons. Changing the currency label does not convert amounts.
 
-The bundled data is synthetic for all 12 months of 2026 and all three scenarios. January–February are quiet; March–May and November are average; June–October and December are busy. No real customer or company records are included.
+The bundled data is synthetic for all 12 months of 2026 and all three scenarios. Januaryâ€“February are quiet; Marchâ€“May and November are average; Juneâ€“October and December are busy. No real customer or company records are included.
 
 **Manage Data** accepts the finance, operations and closing-balance files together in CSV/XLSX format. Files are validated before replacing the current workspace. Each file supports up to 1 MB and 100,000 rows; expanded XLSX contents are limited to 50 MB. Requests and generated responses are limited to 4 MB to fit Vercel's function limits. See [DATA_DICTIONARY.md](DATA_DICTIONARY.md) for all columns, definitions and accounting conventions. Older datasets remain supported and missing optional metrics remain unavailable.
 
@@ -70,7 +70,7 @@ The **Board Pack** page downloads CSV, Excel and an editable 11-slide PowerPoint
 
 **AI Report** produces four management commentary cards and a Markdown download. **Ask Your Data** supports questions over the loaded files and all available periods. It executes validated read-only Python queries, returns supporting source references and identifies unsupported questions. Expand the evidence tables to review the figures. `D1` identifies the data dictionary; `S` IDs identify records or calculated differences retrieved for that answer.
 
-The editable prompt is [prompts/data_agent.md](prompts/data_agent.md). The agent cannot execute generated Python/SQL, browse or read arbitrary files. Customer identities, SKU details and verified causes are not present in the supported aggregate schemas. Relevant results, requested source records, metric definitions, context and recent chat messages are sent to OpenAI. Source IDs are validated, but AI prose still needs human review. Chat clears when data or currency changes; Clear Chat removes the current conversation. `store=False` does not replace an organisational data-retention or residency assessment.
+The editable prompt is [prompts/data_agent.md](prompts/data_agent.md). The agent cannot execute generated Python/SQL, browse or read arbitrary files. Customer identities and SKU details are available through the separate Executive ERP chat source; they remain unavailable in the aggregate finance schemas. Verified causes are unavailable in both. Relevant results, requested source records, metric definitions, context and recent chat messages are sent to OpenAI. Source IDs are validated, but AI prose still needs human review. Chat clears when data or currency changes; Clear Chat removes the current conversation. `store=False` does not replace an organisational data-retention or residency assessment.
 
 ## Architecture
 
@@ -109,3 +109,17 @@ The optional legacy Streamlit UI needs `pip install -r requirements-legacy.txt`;
 ### Data Load Templates
 
 Use **Templates** beside **Manage Data** to download a ZIP containing three sample CSV files and instructions. Upload any subset of these files. Each load replaces all workspace datasets, so omitted files are empty. Period and scenario identify each row; finance also requires account and amount headers. Numeric cells may be blank and operations/balance metric columns may be omitted. At least one actual row is required. Missing inputs and dependent metrics display **No Data**, while explicit zeros remain zero. Include all available files together when updating a workspace.
+
+## Executive Dashboard
+
+Open **Executive Dashboard** in the sidebar for daily revenue breakdowns, MTD and YTD sales, the same-period 2025 comparison, customer profitability, customer and SKU rankings, and revenue against budget/forecast. A separate synthetic Dynamics-style invoice-line dataset covers 36 calendar months (December 2023–November 2026), with actuals through 9 November 2026. See [EXECUTIVE_DATA.md](EXECUTIVE_DATA.md) for the schema, source mapping, accounting definitions and instructions to replace all five CSVs using `EXECUTIVE_DATA_DIR`. The Executive page uses its own date/category/location filters and AED reporting; the existing aggregate upload and AI pages do not read these extracts.
+
+Executive ERP questions are now supported from the dashboard chat panel or by selecting **Executive Dashboard ERP data** on **Ask Your Data**. Python tools calculate filtered sales, customer/SKU rankings, margins, plan variances and period comparisons with supporting evidence. The assistant uses the existing server-side API key and AI settings; restart the backend after rebuilding to load its new endpoints. See [EXECUTIVE_DATA.md](EXECUTIVE_DATA.md).
+
+Page-specific navy assistants are now available on Executive Dashboard, Financial Performance, and Sustainability & Operations. Each has a separate tool allowlist and chat history. There is no standalone Ask Your Data menu item. Executive period filters apply to all overview figures and charts, with nearby Day/MTD/QTD/YTD and matching-month/quarter/year comparison shortcuts.
+
+## Troubleshooting AI locally
+
+Local hosting supports all three data assistants. The Python server must have outbound HTTPS access to OpenAI. A server launched inside a restricted agent sandbox can serve the website but fail every AI request. Start/restart Uvicorn from a normal PowerShell terminal (or explicitly approve normal network access when the agent launches it). Rebuilding React does not change the running backend process.
+
+AI errors now distinguish missing/invalid credentials, project permissions, exhausted quota, rate limits, model access, timeouts and connection failures without exposing credentials. `python scripts/diagnose_ai.py` makes a minimal live request using the existing server configuration, prints only a safe result category, and sends no company data. This diagnostic is separate from automated tests and can incur a small API charge.

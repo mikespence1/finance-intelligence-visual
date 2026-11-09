@@ -1,6 +1,7 @@
 """Local FastAPI service; calculation, AI and export logic stays server-side."""
 from io import BytesIO
 import json
+import logging
 import os
 from pathlib import Path
 import secrets
@@ -13,17 +14,24 @@ from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, Respo
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from openai import AuthenticationError, PermissionDeniedError, RateLimitError, NotFoundError, APITimeoutError, APIConnectionError, APIStatusError
 
-from src.ai import generate_board_commentary
+from src.ai import generate_board_commentary, AIConfigurationError
 from src.board_pack import board_pack
 from src.finance import build_kpis, compare_scenarios, METRIC_GROUPS
 from src.presentation import format_metric, period_label, METRIC_LABELS, LOWER_BETTER, narrative_sections, title_case
+from src.operations_agent import ask_operations
+from src.financial_agent import ask_financial
 from src.query_agent import ask_data
+from src.executive_agent import ask_executive, DEFINITIONS as EXECUTIVE_DEFINITIONS
+from backend.executive import dashboard as executive_dashboard, source as executive_source
 from backend.storage import get_store, WorkspaceConflict, WorkspaceTooLarge
 from src.workbook import style_workbook
 
 ROOT = Path(__file__).resolve().parents[1]
 app = FastAPI(title='Sustainable Packaging Intelligence', version='2.0.0')
+from backend.executive import router as executive_router
+app.include_router(executive_router)
 ai_slots = BoundedSemaphore(2)
 MAX_FILE = 1024 * 1024
 MAX_BODY = 4 * 1024 * 1024
@@ -229,8 +237,27 @@ def ai_request(function):
         return function()
     except HTTPException:
         raise
-    except Exception:
-        raise HTTPException(503, 'AI is unavailable. Check the server API key, model access and connection.') from None
+    except AIConfigurationError:
+        raise HTTPException(503, 'No server-side OpenAI API key is configured. Set OPENAI_API_KEY and restart the Python server.') from None
+    except AuthenticationError:
+        raise HTTPException(503, 'OpenAI rejected the server API key. Update OPENAI_API_KEY and restart the Python server.') from None
+    except PermissionDeniedError:
+        raise HTTPException(503, 'The OpenAI project does not permit this AI request. Check project permissions and model access.') from None
+    except RateLimitError as error:
+        message='The OpenAI API project has no available quota. Check API billing, credits and project limits.' if error.code in ['insufficient_quota','billing_hard_limit_reached'] else 'OpenAI is rate-limiting requests. Wait briefly and try again.'
+        raise HTTPException(503, message) from None
+    except NotFoundError:
+        raise HTTPException(503, 'The configured OpenAI model is unavailable to this API project. Check OPENAI_MODEL and model access.') from None
+    except APITimeoutError:
+        raise HTTPException(503, 'The OpenAI request timed out. Check the server connection and try again.') from None
+    except APIConnectionError:
+        raise HTTPException(503, 'The Python server cannot connect to OpenAI. Check internet, firewall/proxy settings, and restricted network access for the server process.') from None
+    except APIStatusError as error:
+        message='OpenAI is temporarily unavailable. Please retry shortly.' if error.status_code>=500 else 'OpenAI rejected the AI request. Check model compatibility and server configuration.'
+        raise HTTPException(503, message) from None
+    except Exception as error:
+        logging.getLogger(__name__).warning('AI request failed: %s',type(error).__name__)
+        raise HTTPException(503, 'The data assistant encountered an internal error. Please retry or check the server logs.') from None
     finally:
         ai_slots.release()
 
@@ -275,6 +302,125 @@ def chat(question: Question, state=Depends(session)):
                          {'role': 'assistant', 'content': result['answer'], 'reply': result}])[-20:]
     save_workspace(state)
     return result
+
+
+@app.get('/api/financial/chat')
+def get_financial_chat(currency: str=Query(default='AED',pattern=r'^[A-Za-z ]{1,8}$'),state=Depends(session)):
+    key=[state['version'],currency]
+    return {'messages':state.get('financial_history',[]) if state.get('financial_history_key')==key else []}
+
+
+@app.delete('/api/financial/chat')
+def clear_financial_chat(state=Depends(session)):
+    state['financial_history']=[]
+    save_workspace(state)
+    return {'messages':[]}
+
+
+@app.post('/api/financial/chat')
+def financial_chat(question: Question,state=Depends(session)):
+    if not question.question.strip(): raise HTTPException(422,'Enter a question')
+    _,period,_=selected_data(state,question)
+    key=[state['version'],question.currency]
+    history=state.get('financial_history',[]) if state.get('financial_history_key')==key else []
+    context={'currency':question.currency,'selected_period':period,'grain':question.grain,'baseline':question.baseline,
+        'data_source':state['source'],'scope':'Financial Performance page only'}
+    result=ai_request(lambda:ask_financial(question.question,*state['frames'],context,history=history))
+    state['financial_history_key']=key
+    state['financial_history']=(history+[{'role':'user','content':question.question},
+        {'role':'assistant','content':result['answer'],'reply':result}])[-20:]
+    save_workspace(state)
+    return result
+
+
+@app.get('/api/operations/chat')
+def get_operations_chat(currency: str=Query(default='AED',pattern=r'^[A-Za-z ]{1,8}$'),state=Depends(session)):
+    key=[state['version'],currency]
+    return {'messages':state.get('operations_history',[]) if state.get('operations_history_key')==key else []}
+
+
+@app.delete('/api/operations/chat')
+def clear_operations_chat(state=Depends(session)):
+    state['operations_history']=[]
+    save_workspace(state)
+    return {'messages':[]}
+
+
+@app.post('/api/operations/chat')
+def operations_chat(question: Question,state=Depends(session)):
+    if not question.question.strip(): raise HTTPException(422,'Enter a question')
+    _,period,_=selected_data(state,question)
+    key=[state['version'],question.currency]
+    history=state.get('operations_history',[]) if state.get('operations_history_key')==key else []
+    context={'currency':question.currency,'selected_period':period,'grain':question.grain,'baseline':question.baseline,
+        'data_source':state['source'],'scope':'Sustainability & Operations page only'}
+    result=ai_request(lambda:ask_operations(question.question,*state['frames'],context,history=history))
+    state['operations_history_key']=key
+    state['operations_history']=(history+[{'role':'user','content':question.question},
+        {'role':'assistant','content':result['answer'],'reply':result}])[-20:]
+    save_workspace(state)
+    return result
+
+
+class ExecutiveQuestion(BaseModel):
+    question: str = Field(min_length=1, max_length=4000)
+    date: str | None = None
+    category: str = ''
+    location: str = ''
+    period: Literal['day','mtd','qtd','ytd','custom'] = 'mtd'
+    start_date: str | None = None
+
+
+def executive_chat_context(date=None, category='', location='', period='mtd', start_date=None):
+    data = executive_dashboard(date, category, location, period, start_date)
+    sales, _ = executive_source()
+    return {'currency':'AED', 'data_source':data['source'], 'dataset':'Executive ERP',
+        'analysis_start':data['analysis_start'], 'analysis_end':data['analysis_end'],
+        'as_of':data['as_of'], 'category':category, 'location':location, 'baseline':'both',
+        'dataset_revision':sales.attrs['revision']}
+
+
+def executive_history(state, context):
+    if state.get('executive_context') != context:
+        state.update(executive_history=[], executive_context=context)
+    return state.get('executive_history', [])
+
+
+@app.get('/api/executive/chat')
+def get_executive_chat(date: str | None=None, category: str='', location: str='',
+        period: Literal['day','mtd','qtd','ytd','custom']='mtd', start_date: str | None=None, state=Depends(session)):
+    context=executive_chat_context(date,category,location,period,start_date)
+    # Read-only: rapid filter changes can abort browser requests while the
+    # server is still finishing them. Persist context only when posting a question.
+    history=state.get('executive_history', []) if state.get('executive_context') == context else []
+    sales,_=executive_source()
+    return {'messages':history, 'context':context, 'min_date':str(sales.posting_date.min().date()),
+        'max_date':str(sales.posting_date.max().date()), 'categories':sorted(sales.category.unique()), 'locations':sorted(sales.location.unique())}
+
+
+@app.delete('/api/executive/chat')
+def clear_executive_chat(state=Depends(session)):
+    state['executive_history']=[]
+    save_workspace(state)
+    return {'messages':[]}
+
+
+@app.post('/api/executive/chat')
+def executive_chat(question: ExecutiveQuestion, state=Depends(session)):
+    if not question.question.strip(): raise HTTPException(422,'Enter a question')
+    context=executive_chat_context(question.date,question.category,question.location,question.period,question.start_date)
+    history=executive_history(state,context)
+    sales,plans=executive_source()
+    result=ai_request(lambda: ask_executive(question.question,sales,plans,context,history=history))
+    state['executive_history']=(history+[{'role':'user','content':question.question},
+        {'role':'assistant','content':result['answer'],'reply':result}])[-20:]
+    save_workspace(state)
+    return result
+
+
+@app.get('/api/executive/definitions')
+def executive_definitions():
+    return {'text':EXECUTIVE_DEFINITIONS}
 
 
 @app.get('/api/definitions')

@@ -25,16 +25,16 @@ test('report filters, navigation, export and uploads work together', async ({ pa
   }
   await page.getByRole('button', { name: 'Validate & Load Files' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
-  await expect(page.locator('.source-pill')).toHaveText('Uploaded Data');
+  await expect(page.locator('.topbar .source-pill')).toHaveText('Uploaded Data');
   await page.getByRole('button', { name: 'Manage Data' }).click();
   await page.getByRole('button', { name: 'Load Seasonal Sample Data' }).click();
-  await expect(page.locator('.source-pill')).toHaveText('Synthetic Sample Data');
+  await expect(page.locator('.topbar .source-pill')).toHaveText('Synthetic Sample Data');
   expect(errors).toEqual([]);
 });
 
 test('AI report and grounded chat render responses and sources', async ({ page }) => {
   await page.route('**/api/commentary', route => route.fulfill({ json: { text: '## Executive Summary\nTest briefing.', sections: [{ title: 'Executive Summary', body: 'Synthetic results for this reporting period.' }] } }));
-  await page.route('**/api/chat', route => route.request().method() === 'POST' ? route.fulfill({ json: {
+  await page.route('**/api/financial/chat', route => route.request().method() === 'POST' ? route.fulfill({ json: {
     status: 'answered', answer: 'Synthetic revenue is shown below.', limitation: '', source_ids: ['S1'],
     evidence: [{ 'Source ID': 'S1', Metric: 'Revenue', Value: 100, Period: 'December 2026' }],
   } }) : route.continue());
@@ -43,22 +43,17 @@ test('AI report and grounded chat render responses and sources', async ({ page }
   await page.getByRole('navigation').getByRole('button', { name: 'AI Report', exact: true }).click();
   await page.getByRole('button', { name: 'Generate Briefing' }).click();
   await expect(page.getByRole('heading', { name: 'Executive Summary' })).toBeVisible();
-  await page.getByRole('navigation').getByRole('button', { name: 'Ask Your Data', exact: true }).click();
-  const metricsBox = await page.locator('.headline-grid').boundingBox();
-  const promptBox = await page.locator('.chat-input').boundingBox();
-  const examplesBox = await page.getByRole('heading', { name: 'Example Questions' }).boundingBox();
-  expect(promptBox.y).toBeGreaterThanOrEqual(metricsBox.y + metricsBox.height);
-  expect(promptBox.y).toBeLessThan(examplesBox.y);
-  await page.getByLabel('Your Question').fill('What was revenue?');
-  await page.getByRole('button', { name: 'Send question' }).click();
+  await page.getByRole('navigation').getByRole('button', { name: 'Financial Performance', exact: true }).click();
+  await page.getByLabel('Question about Financial Data').fill('What was revenue?');
+  await page.getByRole('button', { name: 'Ask', exact: true }).click();
   await expect(page.getByText('Synthetic revenue is shown below.')).toBeVisible();
-  const answerBox = await page.locator('.chat-message.assistant').boundingBox();
+  const answerBox = await page.locator('.executive-chat-message').last().boundingBox();
   const answeredPromptBox = await page.locator('.chat-input').boundingBox();
   expect(answerBox.y).toBeLessThan(answeredPromptBox.y);
   await page.screenshot({ path: 'test-results/ask-your-data-desktop.png', fullPage: true });
-  await page.getByText('Supporting Data & Calculations', { exact: true }).click();
-  await expect(page.locator('.evidence')).toContainText('Revenue');
-  await page.getByRole('button', { name: 'Clear Chat' }).click();
+  await page.getByText('Supporting financial calculations', { exact: true }).click();
+  await expect(page.locator('.financial-chat .table-scroll')).toContainText('Revenue');
+  await page.getByRole('button', { name: 'Clear Financial chat' }).click();
   await expect(page.getByText('Synthetic revenue is shown below.')).toBeHidden();
 });
 
