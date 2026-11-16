@@ -5,7 +5,9 @@ test('three dashboards use sidebar filters and a common visual metric row',async
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.setViewportSize({width:1600,height:1050});await page.goto('/');
   for(const name of ['Financial Performance','Sustainability & Operations','Executive Dashboard']){
-    await nav(page).getByRole('button',{name,exact:true}).click();
+    const navButton=nav(page).getByRole('button',{name,exact:true});
+    await expect(navButton).toHaveCSS('font-size','15.75px');
+    await navButton.click();
     const filters=page.locator('#reporting-sidebar-filters');
     await expect(filters.getByRole('heading',{name:'Reporting filters',exact:true})).toBeVisible();
     await expect(page.locator('main .filter-bar,main .executive-controls')).toHaveCount(0);

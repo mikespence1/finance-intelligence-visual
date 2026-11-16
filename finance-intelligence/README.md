@@ -19,7 +19,7 @@ npm ci
 npm run dev
 ```
 
-Open **http://127.0.0.1:5173**. One command launches the Node/Vite React server and FastAPI on port 8000. Keep the terminal open and press Ctrl+C to stop. If the Python launcher is unavailable, use `python -m venv .venv`. The Node launcher automatically uses this project's `.venv`; an optional `PYTHON` environment variable can override it.
+Open **http://127.0.0.1:5173**. One command launches the Node/Vite React server and FastAPI on port 8001, avoiding conflicts with services using port 8000. Keep the terminal open and press Ctrl+C to stop. If the Python launcher is unavailable, use `python -m venv .venv`. The Node launcher automatically uses this project's `.venv`; an optional `PYTHON` environment variable can override it.
 
 If Node was just installed, fully reopen your terminal application to refresh PATH.
 
@@ -27,10 +27,10 @@ If Node was just installed, fully reopen your terminal application to refresh PA
 
 ```powershell
 npm run build
-.\.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8001
 ```
 
-Open **http://127.0.0.1:8000**. FastAPI serves the compiled React application and API from the same origin. Build before starting the backend so the asset directory is mounted. Interactive API documentation is at `/docs`.
+Open **http://127.0.0.1:8001**. FastAPI serves the compiled React application and API from the same origin. Build before starting the backend so the asset directory is mounted. Interactive API documentation is at `/docs`.
 
 ## API Configuration
 

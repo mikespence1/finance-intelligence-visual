@@ -1,13 +1,42 @@
 const { test, expect } = require('@playwright/test');
 test('executive reporting filters and accessible sections', async ({ page }) => {
+  test.setTimeout(90000);
   await page.goto('/');
   await page.getByRole('button', { name: 'Executive Dashboard' }).click();
   await expect(page.getByRole('heading', { name: 'Reporting filters', exact: true })).toBeVisible();
+  const sidePanel = page.locator('.executive-side-panel');
+  const sectionNav = page.locator('.executive-dashboard > .executive-sections');
+  await expect(sectionNav).toBeVisible();
+  expect(await sectionNav.locator('button').first().evaluate(button => getComputedStyle(button).minHeight)).toBe('64px');
+  expect(await sectionNav.evaluate(nav => nav.compareDocumentPosition(nav.parentElement.querySelector('.headline-grid')) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTruthy();
+  const filters = page.getByRole('region', {name:'Executive filters'});
+  const comparisonFilter = filters.getByLabel('Comparison Filter');
+  await expect(comparisonFilter).toBeVisible();
+  await expect(comparisonFilter.locator('option')).toHaveText(['Last month','Last quarter','Last year','All comparisons']);
+  await expect(page.getByRole('navigation', {name:'Executive analysis period and cutoff filters'})).toHaveCount(0);
+  const sideBox = await sidePanel.boundingBox();
+  const metricsBox = await page.locator('.dashboard-metrics').boundingBox();
+  expect(sideBox.x).toBeGreaterThan(metricsBox.x);
   await expect(page.getByLabel('Location', { exact: true }).getByRole('option')).toHaveText(['All locations','Abu Dhabi','Dubai','KSA','Other Emirates']);
-  await page.getByRole('button', { name: 'Customer performance', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Bottom 10 customers by gross profit' })).toBeVisible();
-  await page.getByLabel('Analysis period', { exact: true }).selectOption('ytd');
+  await filters.getByLabel('Analysis period').selectOption('ytd');
   await expect(page.getByRole('status').filter({hasText:'2026-01-01 to 2026-11-09'})).toBeVisible();
+  await comparisonFilter.selectOption('last_year');
+  await expect(comparisonFilter).toHaveValue('last_year');
+  await expect(page.locator('.executive-comparison-cards').first().locator('article')).toHaveCount(2);
+  for (const [section, heading] of [
+    ['Sales overview','Revenue against plan - selected period'],
+    ['Customer performance','Bottom 10 customers by gross profit'],
+    ['Product performance','Bottom 10 SKUs by revenue'],
+    ['Trends & comparisons','Revenue trend - selected period'],
+  ]) {
+    await page.getByRole('button', {name:section, exact:true}).click();
+    await expect(page.getByRole('heading', {name:heading, exact:true})).toBeVisible();
+    await expect(filters).toBeVisible();
+    await expect(filters.getByLabel('Analysis period')).toHaveValue('ytd');
+    await expect(comparisonFilter).toHaveValue('last_year');
+    if (section !== 'Sales overview') await expect(page.locator('.executive-comparison-cards').first().locator('article')).toHaveCount(2);
+  }
+  await page.getByRole('button', {name:'Customer performance', exact:true}).click();
   await page.getByLabel('Rank customers by').selectOption('net_revenue');
   await page.getByLabel('Customers in each list').selectOption('5');
   await expect(page.getByRole('heading', { name: 'Bottom 5 customers by revenue' })).toBeVisible();
@@ -81,6 +110,7 @@ test('rounded ranking bars and matched-period trends remain accessible', async (
   await expect(top.getByRole('heading',{name:`${name} - period progress`,exact:true})).toBeVisible();
   await top.getByText('View exact figures',{exact:true}).click();
   await expect(top.getByRole('columnheader',{name:'Gross margin',exact:true})).toBeVisible();
+  await expect(top.locator('.executive-chart-data td').filter({hasText:/AED [\d,]+\.\d+/}).first()).toBeVisible();
   await page.screenshot({path:'test-results/executive-charts-desktop.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});
   await expect(focus).toBeVisible();

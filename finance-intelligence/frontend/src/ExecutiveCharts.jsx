@@ -4,7 +4,7 @@ import {ResponsiveContainer, BarChart, Bar, Cell, LabelList, LineChart, Line, XA
 const palette={teal:'#00A6A6',navy:'#0B1F33',slate:'#667085'};
 const labels={net_revenue:'Revenue',gross_profit:'Gross profit',gross_margin:'Gross margin'};
 const compact=value=>new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:1}).format(value);
-const format=(value,metric)=>value==null?'Unavailable':metric==='gross_margin'?`${value.toFixed(1)}%`:`AED ${new Intl.NumberFormat('en',{maximumFractionDigits:0}).format(value)}`;
+const format=(value,metric)=>value==null?'Unavailable':metric==='gross_margin'?`${value.toFixed(1)}%`:`AED ${new Intl.NumberFormat('en',{maximumFractionDigits:2}).format(value)}`;
 const delta=value=>value==null?'Unavailable':`${value>=0?'+':''}${value.toFixed(1)}`;
 export function PeriodTrend({filters,dimension='location',members=[],metric='net_revenue',title='Progress against prior periods',comparison='all'}) {
   const [data,setData]=useState(null),[error,setError]=useState(''),[retry,setRetry]=useState(0);

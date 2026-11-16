@@ -42,7 +42,7 @@ function unit(metric, currency) {
 function number(value, metric, currency, compact = false) {
   if (value === null || value === undefined || !Number.isFinite(value)) return 'No Data';
   const suffix = unit(metric, currency);
-  const formatted = new Intl.NumberFormat('en', { maximumFractionDigits: ['%', 'days', 'tonnes'].includes(suffix) ? 1 : compact ? 1 : 0,
+  const formatted = new Intl.NumberFormat('en', { maximumFractionDigits: suffix === currency ? 2 : ['%', 'days', 'tonnes'].includes(suffix) ? 1 : 0,
     notation: compact && Math.abs(value) >= 1000000 ? 'compact' : 'standard' }).format(value);
   return suffix === currency ? `${currency} ${formatted}` : `${formatted}${suffix === '%' ? '%' : ` ${suffix}`}`;
 }
